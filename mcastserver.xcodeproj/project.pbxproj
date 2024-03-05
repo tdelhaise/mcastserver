@@ -45,6 +45,7 @@
 		926C07132B96D22C006F661B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		926C07182B96DC7A006F661B /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		926C07192B96DCA5006F661B /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		926C071A2B96EEB0006F661B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +69,7 @@
 		926C06EF2B95E28C006F661B = {
 			isa = PBXGroup;
 			children = (
+				926C071A2B96EEB0006F661B /* README.md */,
 				926C06FA2B95E28C006F661B /* mcastserver */,
 				926C07122B96D22C006F661B /* mcastclient */,
 				926C06F92B95E28C006F661B /* Products */,
