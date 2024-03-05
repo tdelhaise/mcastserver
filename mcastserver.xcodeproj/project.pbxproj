@@ -8,10 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		926C06FC2B95E28C006F661B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 926C06FB2B95E28C006F661B /* main.c */; };
+		926C07042B95E3FD006F661B /* ServerConfiguration.c in Sources */ = {isa = PBXBuildFile; fileRef = 926C07032B95E3FD006F661B /* ServerConfiguration.c */; };
+		926C07082B9625EF006F661B /* Server.c in Sources */ = {isa = PBXBuildFile; fileRef = 926C07072B9625EF006F661B /* Server.c */; };
+		926C07142B96D22C006F661B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 926C07132B96D22C006F661B /* main.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		926C06F62B95E28C006F661B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		926C070F2B96D22C006F661B /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -25,10 +37,25 @@
 /* Begin PBXFileReference section */
 		926C06F82B95E28C006F661B /* mcastserver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mcastserver; sourceTree = BUILT_PRODUCTS_DIR; };
 		926C06FB2B95E28C006F661B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		926C07022B95E3FD006F661B /* ServerConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ServerConfiguration.h; sourceTree = "<group>"; };
+		926C07032B95E3FD006F661B /* ServerConfiguration.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ServerConfiguration.c; sourceTree = "<group>"; };
+		926C07062B9625EF006F661B /* Server.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Server.h; sourceTree = "<group>"; };
+		926C07072B9625EF006F661B /* Server.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Server.c; sourceTree = "<group>"; };
+		926C07112B96D22C006F661B /* mcastclient */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mcastclient; sourceTree = BUILT_PRODUCTS_DIR; };
+		926C07132B96D22C006F661B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		926C07182B96DC7A006F661B /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		926C07192B96DCA5006F661B /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		926C06F52B95E28C006F661B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		926C070E2B96D22C006F661B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -42,6 +69,7 @@
 			isa = PBXGroup;
 			children = (
 				926C06FA2B95E28C006F661B /* mcastserver */,
+				926C07122B96D22C006F661B /* mcastclient */,
 				926C06F92B95E28C006F661B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -50,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				926C06F82B95E28C006F661B /* mcastserver */,
+				926C07112B96D22C006F661B /* mcastclient */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -57,9 +86,31 @@
 		926C06FA2B95E28C006F661B /* mcastserver */ = {
 			isa = PBXGroup;
 			children = (
+				926C07182B96DC7A006F661B /* CMakeLists.txt */,
+				926C07052B960BB8006F661B /* Headers */,
 				926C06FB2B95E28C006F661B /* main.c */,
+				926C07032B95E3FD006F661B /* ServerConfiguration.c */,
+				926C07072B9625EF006F661B /* Server.c */,
 			);
 			path = mcastserver;
+			sourceTree = "<group>";
+		};
+		926C07052B960BB8006F661B /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				926C07062B9625EF006F661B /* Server.h */,
+				926C07022B95E3FD006F661B /* ServerConfiguration.h */,
+			);
+			path = Headers;
+			sourceTree = "<group>";
+		};
+		926C07122B96D22C006F661B /* mcastclient */ = {
+			isa = PBXGroup;
+			children = (
+				926C07192B96DCA5006F661B /* CMakeLists.txt */,
+				926C07132B96D22C006F661B /* main.c */,
+			);
+			path = mcastclient;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -82,6 +133,23 @@
 			productReference = 926C06F82B95E28C006F661B /* mcastserver */;
 			productType = "com.apple.product-type.tool";
 		};
+		926C07102B96D22C006F661B /* mcastclient */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 926C07152B96D22C006F661B /* Build configuration list for PBXNativeTarget "mcastclient" */;
+			buildPhases = (
+				926C070D2B96D22C006F661B /* Sources */,
+				926C070E2B96D22C006F661B /* Frameworks */,
+				926C070F2B96D22C006F661B /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mcastclient;
+			productName = mcastclient;
+			productReference = 926C07112B96D22C006F661B /* mcastclient */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -92,6 +160,9 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					926C06F72B95E28C006F661B = {
+						CreatedOnToolsVersion = 15.0.1;
+					};
+					926C07102B96D22C006F661B = {
 						CreatedOnToolsVersion = 15.0.1;
 					};
 				};
@@ -110,6 +181,7 @@
 			projectRoot = "";
 			targets = (
 				926C06F72B95E28C006F661B /* mcastserver */,
+				926C07102B96D22C006F661B /* mcastclient */,
 			);
 		};
 /* End PBXProject section */
@@ -120,6 +192,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				926C06FC2B95E28C006F661B /* main.c in Sources */,
+				926C07042B95E3FD006F661B /* ServerConfiguration.c in Sources */,
+				926C07082B9625EF006F661B /* Server.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		926C070D2B96D22C006F661B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				926C07142B96D22C006F661B /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -261,6 +343,26 @@
 			};
 			name = Release;
 		};
+		926C07162B96D22C006F661B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SB7H9B6TY8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		926C07172B96D22C006F661B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SB7H9B6TY8;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -278,6 +380,15 @@
 			buildConfigurations = (
 				926C07002B95E28C006F661B /* Debug */,
 				926C07012B95E28C006F661B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		926C07152B96D22C006F661B /* Build configuration list for PBXNativeTarget "mcastclient" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				926C07162B96D22C006F661B /* Debug */,
+				926C07172B96D22C006F661B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

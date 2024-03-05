@@ -6,9 +6,18 @@
 //
 
 #include <stdio.h>
+#include "Headers/ServerConfiguration.h"
+#include "Headers/Server.h"
 
 int main(int argc, const char * argv[]) {
     // insert code here...
-    printf("Hello, World!\n");
-    return 0;
+    ServerConfigurationSetMulticastJoinAddress("239.255.255.250");
+    
+    ServerConfiguration* serverConfiguration = ServerConfigurationGet();
+    
+    ServerCreateWithConfiguration(serverConfiguration);
+    
+    int exitCode = ServerRun();
+    
+    return exitCode;
 }
