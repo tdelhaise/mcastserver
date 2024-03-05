@@ -12,8 +12,14 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #define BUF_SIZE 500
+#define MAX_PORT_NUMBER 6
+#define MAX_HOSTNAME 255
+#define MAX_MESSAGE 255
 
 int main(int argc, char *argv[])
 {
@@ -24,11 +30,40 @@ int main(int argc, char *argv[])
     ssize_t          nread;
     struct addrinfo  hints;
     struct addrinfo  *result, *rp;
+    char portNumber[MAX_PORT_NUMBER];
+    uint16_t portAsInteger = -1;
+    char hostname[MAX_HOSTNAME];
+    char message[MAX_MESSAGE];
 
     if (argc < 3) {
-        fprintf(stderr, "Usage: %s host port msg...\n", argv[0]);
+        fprintf(stderr, "Usage: %s hostname port message\n", argv[0]);
         exit(EXIT_FAILURE);
     }
+    
+    memset(portNumber,0,sizeof(portNumber));
+    memset(hostname,0,sizeof(hostname));
+    memset(message,0,sizeof(message));
+    
+    if(strlen(portNumber) >= MAX_PORT_NUMBER) {
+        fprintf(stderr, "port: string too long. Max = %d\n", MAX_PORT_NUMBER);
+        exit(EXIT_FAILURE);
+    }
+
+    if(strlen(hostname) >= MAX_HOSTNAME) {
+        fprintf(stderr, "hostname: string too long. Max = %d\n", MAX_HOSTNAME);
+        exit(EXIT_FAILURE);
+    }
+
+    if(strlen(message) >= MAX_MESSAGE) {
+        fprintf(stderr, "message: string too long. Max = %d\n", MAX_MESSAGE);
+        exit(EXIT_FAILURE);
+    }
+
+    strcpy(hostname,argv[1]);
+    strcpy(portNumber, argv[2]);
+    strcpy(message, argv[3]);
+    
+    portAsInteger = atoi(portNumber);
 
     /* Obtain address(es) matching host/port. */
     memset(&hints, 0, sizeof(hints));
@@ -37,7 +72,7 @@ int main(int argc, char *argv[])
     hints.ai_flags = 0;
     hints.ai_protocol = 0;          /* Any protocol */
 
-    status = getaddrinfo(argv[1], argv[2], &hints, &result);
+    status = getaddrinfo(hostname, portNumber, &hints, &result);
     if (status != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
         exit(EXIT_FAILURE);
@@ -52,9 +87,31 @@ int main(int argc, char *argv[])
         socketFileDescriptor = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (socketFileDescriptor == -1)
             continue;
-
-        if (connect(socketFileDescriptor, rp->ai_addr, rp->ai_addrlen) != -1)
+        
+        // set up destination address
+        //
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = htonl(INADDR_ANY); // differs from sender
+        addr.sin_port = htons(portAsInteger);
+        //
+        // bind to receive address
+        //
+        if (bind(socketFileDescriptor, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
+            perror("bind");
+            continue;
+        }
+        //
+        // use setsockopt() to request that the kernel join a multicast group
+        //
+        struct ip_mreq mreq;
+        mreq.imr_multiaddr.s_addr = inet_addr(hostname);
+        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+        if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)) < 0 ) {
+            perror("setsockopt");
             break;                  /* Success */
+        }
 
         close(socketFileDescriptor);
     }
@@ -62,34 +119,58 @@ int main(int argc, char *argv[])
     freeaddrinfo(result);           /* No longer needed */
 
     if (rp == NULL) {               /* No address succeeded */
-        fprintf(stderr, "Could not connect\n");
+        fprintf(stderr, "Could not bind\n");
         exit(EXIT_FAILURE);
     }
 
     /* Send remaining command-line arguments as separate
        datagrams, and read responses from server. */
     for (size_t j = 3; j < argc; j++) {
-        len = strlen(argv[j]) + 1;
+        len = strlen(message) + 1;
                 /* +1 for terminating null byte */
 
         if (len > BUF_SIZE) {
-            fprintf(stderr,
-                    "Ignoring long message in argument %zu\n", j);
+            fprintf(stderr, "Ignoring long message in argument %zu\n", j);
             continue;
         }
+        
+        // set up destination address
+        //
+        struct sockaddr_storage peerAddress;
+        memset(&peerAddress, 0, sizeof(peerAddress));
+        socklen_t peerAddressLength = sizeof(peerAddress);
+        
+        ssize_t sentBytes = sendto(socketFileDescriptor, message, len, 0, (struct sockaddr *) &peerAddress, peerAddressLength);
+        if (sentBytes != len) {
+            perror("sendto");
+            fprintf(stderr, "Error sending message\n");
+            exit(EXIT_FAILURE);
+        } else {
+            fprintf(stdout, "Sent %ld byte(s) \n", sentBytes);
+        }
 
-        if (write(socketFileDescriptor, argv[j], len) != len) {
+        /*
+        if (write(socketFileDescriptor, message, len) != len) {
             fprintf(stderr, "partial/failed write\n");
             exit(EXIT_FAILURE);
         }
-
+        
         nread = read(socketFileDescriptor, buf, BUF_SIZE);
         if (nread == -1) {
             perror("read");
             exit(EXIT_FAILURE);
         }
+        */
+        
+        ssize_t nbytes = recvfrom( socketFileDescriptor, buf, BUF_SIZE, 0, (struct sockaddr *) &peerAddress, &peerAddressLength);
+        if (nbytes < 0) {
+            perror("recvfrom");
+            exit(EXIT_FAILURE);
+        }
+        buf[nbytes] = '\0';
 
-        printf("Received %zd bytes: %s\n", nread, buf);
+
+        printf("Received %zd bytes: %s\n", nbytes, buf);
     }
 
     exit(EXIT_SUCCESS);
