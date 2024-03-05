@@ -18,8 +18,11 @@ void ServerConfigurationSetMulticastJoinPort(uint16_t portNumber) {
     currentServerConfiguration.mcastJoinPort = portNumber;
 }
 
-void ServerConfigurationSetMulticastJoinAddress(const char joinGroupAddress[MAX_JOIN_GROUP_ADDRESS_LEN]) {
-    strcpy(currentServerConfiguration.mcastJoinGroupAddress,joinGroupAddress);
+void ServerConfigurationSetMulticastJoinAddress(const char* joinGroupAddress) {
+    if (joinGroupAddress != NULL) {
+        assert(strlen(joinGroupAddress) <= MAX_JOIN_GROUP_ADDRESS_LEN);
+        strcpy(currentServerConfiguration.mcastJoinGroupAddress,joinGroupAddress);
+    }
 }
 
 ServerConfiguration* ServerConfigurationCopy(ServerConfiguration* inputConfiguration) {

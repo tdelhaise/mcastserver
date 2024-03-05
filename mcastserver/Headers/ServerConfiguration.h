@@ -26,7 +26,7 @@ struct __ServerConfiguration {
 typedef struct __ServerConfiguration ServerConfiguration;
 
 void ServerConfigurationSetMulticastJoinPort(uint16_t portNumber);
-void ServerConfigurationSetMulticastJoinAddress(const char joinGroupAddress[MAX_JOIN_GROUP_ADDRESS_LEN]);
+void ServerConfigurationSetMulticastJoinAddress(const char* joinGroupAddress);
 ServerConfiguration* ServerConfigurationGet(void);
 void ServerConfigurationFree(ServerConfiguration* serverConfiguration);
 ServerConfiguration* ServerConfigurationCopy(ServerConfiguration* inputConfiguration);
