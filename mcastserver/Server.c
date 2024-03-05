@@ -137,42 +137,37 @@ ServerExitCode ServerRun(void) {
         return status;
     }
 
-    // set up destination address
-    //
-    struct sockaddr_in peer_addr;
-    memset(&peer_addr, 0, sizeof(peer_addr));
-    peer_addr.sin_family = AF_INET;
-    peer_addr.sin_addr.s_addr = htonl(INADDR_ANY); // differs from sender
-    peer_addr.sin_port = htons(currentServer.serverConfiguration->mcastJoinPort);
-
     while(currentServer.shouldStop == false) {
         char host[NI_MAXHOST], service[NI_MAXSERV];
         char msgbuf[MSGBUFSIZE];
+        memset(msgbuf, 0, sizeof(msgbuf));
         // set up destination address
         //
-        struct sockaddr_in peer_addr;
-        memset(&peer_addr, 0, sizeof(peer_addr));
-        peer_addr.sin_family = AF_INET;
-        peer_addr.sin_addr.s_addr = htonl(INADDR_ANY); // differs from sender
-        peer_addr.sin_port = htons(currentServer.serverConfiguration->mcastJoinPort);
+        struct sockaddr_storage peerAddress;
+        memset(&peerAddress, 0, sizeof(peerAddress));
+        socklen_t peerAddressLength = sizeof(peerAddress);
         
-        unsigned int peer_addrlen = sizeof(peer_addr);
-        long nbytes = recvfrom( currentServer.listenFileDescriptor, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *) &peer_addr, &peer_addrlen);
+        ssize_t nbytes = recvfrom( currentServer.listenFileDescriptor, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *) &peerAddress, &peerAddressLength);
         if (nbytes < 0) {
             perror("recvfrom");
             return failedToReceiveFrom;
         }
         msgbuf[nbytes] = '\0';
         
-        int s = getnameinfo((struct sockaddr *) &peer_addr, peer_addrlen, host, NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICSERV);
-        if (s == 0) {
+        int status = getnameinfo((struct sockaddr *) &peerAddress, peerAddressLength, host, NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICSERV);
+        if (status == 0) {
             printf("Received %zd bytes from %s:%s => [%s]\n", nbytes, host, service, msgbuf);
         } else {
-            fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
+            fprintf(stderr, "getnameinfo: %s\n", gai_strerror(status));
+            return failedToGetNameInfo;
         }
-        
-        if (sendto(currentServer.listenFileDescriptor, msgbuf, nbytes, 0, (struct sockaddr *) &peer_addr, peer_addrlen) != nbytes) {
+                
+        ssize_t sentBytes = sendto(currentServer.listenFileDescriptor, msgbuf, nbytes, 0, (struct sockaddr *) &peerAddress, peerAddressLength);
+        if (sentBytes != nbytes) {
+            perror("sendto");
             fprintf(stderr, "Error sending response\n");
+        } else {
+            fprintf(stdout, "Sent %ld byte(s) \n", sentBytes);
         }
     }
     

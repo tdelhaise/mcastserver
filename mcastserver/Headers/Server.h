@@ -36,7 +36,9 @@ typedef enum __ServerExitCode {
     failedToBind,
     failedToSetSocketOptionAddMulticastMembership,
     failedToPrepareServer,
-    failedToReceiveFrom
+    failedToReceiveFrom,
+    failedToGetNameInfo,
+    failedToGetAddressInfo
 } ServerExitCode;
 
 Server* ServerCopy(Server* inputServer);
