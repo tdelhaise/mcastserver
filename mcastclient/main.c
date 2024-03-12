@@ -27,7 +27,6 @@ int main(int argc, char *argv[])
     int              status = 0;
     char             buf[BUF_SIZE];
     size_t           len;
-    ssize_t          nread;
     struct addrinfo  hints;
     struct addrinfo  *result, *rp;
     char portNumber[MAX_PORT_NUMBER];
@@ -100,6 +99,7 @@ int main(int argc, char *argv[])
         //
         if (bind(socketFileDescriptor, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
             perror("bind");
+            close(socketFileDescriptor);
             continue;
         }
         //
@@ -110,10 +110,11 @@ int main(int argc, char *argv[])
         mreq.imr_interface.s_addr = htonl(INADDR_ANY);
         if (setsockopt(socketFileDescriptor, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)) < 0 ) {
             perror("setsockopt");
-            break;                  /* Success */
+            close(socketFileDescriptor);
+            continue;
         }
-
-        close(socketFileDescriptor);
+        /* Success */
+        break;
     }
 
     freeaddrinfo(result);           /* No longer needed */
@@ -172,6 +173,9 @@ int main(int argc, char *argv[])
 
         printf("Received %zd bytes: %s\n", nbytes, buf);
     }
+    
+    close(socketFileDescriptor);
 
+    /* Success */
     exit(EXIT_SUCCESS);
 }

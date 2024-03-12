@@ -5,7 +5,6 @@
 //  Created by Thierry DELHAISE on 04/03/2024.
 //
 
-#include <stdio.h>
 #include "Headers/ServerConfiguration.h"
 #include "Headers/Server.h"
 

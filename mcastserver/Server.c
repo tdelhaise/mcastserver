@@ -5,8 +5,10 @@
 //  Created by Thierry DELHAISE on 04/03/2024.
 //
 
-#include "Headers/Server.h"
+
 #include "Headers/ServerConfiguration.h"
+#include "Headers/NetworkInterface.h"
+#include "Headers/Server.h"
 
 
 #define MSGBUFSIZE 512
@@ -67,30 +69,39 @@ void ServerShouldStop(void) {
     }
 }
 
+_Bool __ServerCreateListenFileDescriptor(void) {
+    
+    //
+    // create what looks like an ordinary UDP socket
+    //
+    currentServer.listenFileDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
+    if (currentServer.listenFileDescriptor < 0) {
+        perror("socket");
+        return false;
+    }
+    //
+    // allow multiple sockets to use the same PORT number
+    //
+    u_int yes = 1;
+    if (setsockopt(currentServer.listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, (char*) &yes, sizeof(yes)) < 0) {
+        perror("Reusing ADDR failed");
+        return false;
+    }
+    
+    return true;
+}
+
 ServerExitCode ServerPrepareRun(void) {
     
+    discoverNetworkInterface();
+    
     if (pthread_mutex_lock(&serverMutex) == 0) {
-        //
-        // create what looks like an ordinary UDP socket
-        //
-        currentServer.listenFileDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
-        if (currentServer.listenFileDescriptor < 0) {
-            perror("socket");
+        if(__ServerCreateListenFileDescriptor() == false) {
             pthread_mutex_unlock(&serverMutex);
             ServerShouldStop();
             return failedToCreateSocket;
         }
-        //
-        // allow multiple sockets to use the same PORT number
-        //
-        u_int yes = 1;
-        if (setsockopt(currentServer.listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, (char*) &yes, sizeof(yes)) < 0) {
-            perror("Reusing ADDR failed");
-            pthread_mutex_unlock(&serverMutex);
-            ServerShouldStop();
-            return failedToSetSocketListeningForSamePort;
-        }
-        
+
         // set up destination address
         //
         struct sockaddr_in addr;
