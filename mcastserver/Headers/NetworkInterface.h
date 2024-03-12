@@ -18,7 +18,6 @@
 #include <net/if.h>
 #include <netinet/if_ether.h>
 #include <netinet/in.h>
-#include <netinet6/in6_var.h>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 #include <netdb.h>
