@@ -8,11 +8,15 @@
 #include "Headers/NetworkInterface.h"
 
 
+
+
+
 const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
     if (socketAddress == NULL) {
         return "ERROR";
     }
-    
+
+#ifdef __APPLE__
     switch (socketAddress->sa_family) {
         case AF_UNSPEC:
             return "AF_UNSPEC";
@@ -97,6 +101,37 @@ const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
         default:
             return "UNKNOWN";
     }
+#endif
+#ifdef __linux__
+    switch (socketAddress->sa_family) {
+        case AF_UNSPEC:
+            return "AF_UNSPEC";
+        case AF_UNIX:
+            return "AF_UNIX";
+        case AF_INET:
+            return "AF_INET";
+        case AF_SNA:
+            return "AF_SNA";
+        case AF_DECnet:
+            return "AF_DECnet";
+        case AF_APPLETALK:
+            return "AF_APPLETALK";
+        case AF_ROUTE:
+            return "AF_ROUTE";
+        case AF_IPX:
+            return "AF_IPX";
+        case AF_ISDN:
+            return "AF_ISDN";
+        case AF_INET6:
+            return "AF_INET6";
+        case AF_VSOCK:
+            return "AF_VSOCK";
+        case AF_MAX:
+            return "AF_MAX";
+        default:
+            return "UNKNOWN";
+    }
+#endif
 }
 
 #define MIN_DISPLAY_FLAGS_LENGTH    15*16
