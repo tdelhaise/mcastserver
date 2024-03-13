@@ -62,6 +62,10 @@ int main(int argc, char *argv[])
     strcpy(portNumber, argv[2]);
     strcpy(message, argv[3]);
     
+    unsigned long messageLength = strlen(message);
+    
+    fprintf(stdout, "Will send [%s] %ld byte(s) to host [%s] at port [%s]\n", message, messageLength, hostname, portNumber);
+    
     portAsInteger = atoi(portNumber);
 
     /* Obtain address(es) matching host/port. */
@@ -83,6 +87,7 @@ int main(int argc, char *argv[])
        and) try the next address. */
 
     for (rp = result; rp != NULL; rp = rp->ai_next) {
+        fprintf(stdout, "socket family [%d] type [%d] proto [%d]\n",rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         socketFileDescriptor = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (socketFileDescriptor == -1)
             continue;
