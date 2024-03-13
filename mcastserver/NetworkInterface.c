@@ -123,8 +123,6 @@ const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
             return "AF_ATMSVC";
         case AF_RDS:
             return "AF_RDS";
-        case AF_SNA:
-            return "AF_SNA";
         case AF_IRDA:
             return "AF_IRDA";
         case AF_PPPOX:
