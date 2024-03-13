@@ -97,14 +97,6 @@ const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
             return "AF_UTUN";
 #endif
 #ifdef __linux__
-        case AF_LOCAL:
-            return "AF_LOCAL";
-        case AF_UNIX:
-            return "AF_UNIX";
-        case AF_FILE:
-            return "AF_FILE";
-        case AF_AX25:
-            return "AF_AX25";
         case AF_NETROM:
             return "AF_NETROM";
         case AF_BRIDGE:
