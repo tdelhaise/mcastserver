@@ -113,8 +113,6 @@ const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
             return "AF_SECURITY";
         case AF_KEY:
             return "AF_KEY";
-        case AF_NETLINK:
-            return "AF_NETLINK";
         case AF_PACKET:
             return "AF_PACKET";
         case AF_ASH:
