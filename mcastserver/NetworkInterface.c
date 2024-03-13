@@ -209,7 +209,7 @@ void NetworkInterfaceGetFlags(unsigned int flags, char displayFlags[MIN_DISPLAY_
         strcat(displayFlags, "ALLMULTI ");
     }
     if (flags & IFF_MULTICAST) {
-        strcat(displayFlags, "IFF_MULTICAST");
+        strcat(displayFlags, "MULTICAST ");
     }
 #ifdef __APPLE__
     if (flags & IFF_OACTIVE) {
@@ -230,22 +230,22 @@ void NetworkInterfaceGetFlags(unsigned int flags, char displayFlags[MIN_DISPLAY_
 #endif
 #ifdef __linux__
     if (flags & IFF_ALLMULTI) {
-        strcat(displayFlags, "ALLMULTI");
+        strcat(displayFlags, "ALLMULTI ");
     }
     if (flags & IFF_MASTER) {
-        strcat(displayFlags, "MASTER");
+        strcat(displayFlags, "MASTER ");
     }
     if (flags & IFF_SLAVE) {
-        strcat(displayFlags, "SLAVE");
+        strcat(displayFlags, "SLAVE ");
     }
     if (flags & IFF_PORTSEL) {
-        strcat(displayFlags, "PORTSEL");
+        strcat(displayFlags, "PORTSEL ");
     }
     if (flags & IFF_AUTOMEDIA) {
-        strcat(displayFlags, "AUTOMEDIA");
+        strcat(displayFlags, "AUTOMEDIA ");
     }
     if (flags & IFF_DYNAMIC) {
-        strcat(displayFlags, "DYNAMIC");
+        strcat(displayFlags, "DYNAMIC ");
     }
 #endif
 }
