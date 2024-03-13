@@ -34,13 +34,13 @@ const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
             return "AF_ROUTE";
         case AF_IPX:
             return "AF_IPX";
-        case AF_LINK:
-            return "AF_LINK";
         case AF_INET6:
             return "AF_INET6";
         case AF_ISDN:
             return "AF_ISDN";
 #ifdef __APPLE__
+        case AF_LINK:
+            return "AF_LINK";
         case AF_IMPLINK:
             return "AF_IMPLINK";
         case AF_PUP:
@@ -97,20 +97,86 @@ const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
             return "AF_UTUN";
 #endif
 #ifdef __linux__
-        case IFF_ALLMULTI:
-            return "IFF_ALLMULTI";
-        case IFF_MASTER:
-            return "IFF_MASTER";
-        case IFF_SLAVE:
-            return "IFF_SLAVE";
-        case IFF_MULTICAST:
-            return "IFF_MULTICAST";
-        case IFF_PORTSEL:
-            return "IFF_PORTSEL";
-        case IFF_AUTOMEDIA:
-            return "IFF_AUTOMEDIA";
-        case IFF_DYNAMIC:
-            return "IFF_DYNAMIC";
+        case AF_LOCAL:
+            return "AF_LOCAL";
+        case AF_UNIX:
+            return "AF_UNIX";
+        case AF_FILE:
+            return "AF_FILE";
+        case AF_AX25:
+            return "AF_AX25";
+        case AF_NETROM:
+            return "AF_NETROM";
+        case AF_BRIDGE:
+            return "AF_BRIDGE";
+        case AF_ATMPVC:
+            return "AF_ATMPVC";
+        case AF_X25:
+            return "AF_X25";
+        case AF_ROSE:
+            return "AF_ROSE";
+        case AF_NETBEUI:
+            return "AF_NETBEUI";
+        case AF_SECURITY:
+            return "AF_SECURITY";
+        case AF_KEY:
+            return "AF_KEY";
+        case AF_NETLINK:
+            return "AF_NETLINK";
+        case AF_PACKET:
+            return "AF_PACKET";
+        case AF_ASH:
+            return "AF_ASH";
+        case AF_ECONET:
+            return "AF_ECONET";
+        case AF_ATMSVC:
+            return "AF_ATMSVC";
+        case AF_RDS:
+            return "AF_RDS";
+        case AF_SNA:
+            return "AF_SNA";
+        case AF_IRDA:
+            return "AF_IRDA";
+        case AF_PPPOX:
+            return "AF_PPPOX";
+        case AF_WANPIPE:
+            return "AF_WANPIPE";
+        case AF_LLC:
+            return "AF_LLC";
+        case AF_IB:
+            return "AF_IB";
+        case AF_MPLS:
+            return "AF_MPLS";
+        case AF_CAN:
+            return "AF_CAN";
+        case AF_TIPC:
+            return "AF_TIPC";
+        case AF_BLUETOOTH:
+            return "AF_BLUETOOTH";
+        case AF_IUCV:
+            return "AF_IUCV";
+        case AF_RXRPC:
+            return "AF_RXRPC";
+        case AF_PHONET:
+            return "AF_PHONET";
+        case AF_IEEE802154:
+            return "AF_IEEE802154";
+        case AF_CAIF:
+            return "AF_CAIF";
+        case AF_ALG:
+            return "AF_ALG";
+        case AF_NFC:
+            return "AF_NFC";
+        case AF_KCM:
+            return "AF_KCM";
+        case AF_QIPCRTR:
+            return "AF_QIPCRTR";
+        case AF_SMC:
+            return "AF_SMC";
+        case AF_XDP:
+            return "AF_XDP";
+        case AF_MCTP:
+            return "AF_MCTP";
 #endif
         case AF_VSOCK:
             return "AF_VSOCK";
@@ -154,6 +220,10 @@ void NetworkInterfaceGetFlags(unsigned int flags, char displayFlags[MIN_DISPLAY_
     if (flags & IFF_ALLMULTI) {
         strcat(displayFlags, "ALLMULTI ");
     }
+    if (flags & IFF_MULTICAST) {
+        strcat(displayFlags, "IFF_MULTICAST");
+    }
+#ifdef __APPLE__
     if (flags & IFF_OACTIVE) {
         strcat(displayFlags, "OACTIVE ");
     }
@@ -169,9 +239,27 @@ void NetworkInterfaceGetFlags(unsigned int flags, char displayFlags[MIN_DISPLAY_
     if (flags & IFF_LINK2) {
         strcat(displayFlags, "LINK2 ");
     }
-    if (flags & IFF_MULTICAST) {
-        strcat(displayFlags, "MULTICAST");
+#endif
+#ifdef __linux__
+    if (flags & IFF_ALLMULTI) {
+        strcat(displayFlags, "ALLMULTI");
     }
+    if (flags & IFF_MASTER) {
+        strcat(displayFlags, "MASTER");
+    }
+    if (flags & IFF_SLAVE) {
+        strcat(displayFlags, "SLAVE");
+    }
+    if (flags & IFF_PORTSEL) {
+        strcat(displayFlags, "PORTSEL");
+    }
+    if (flags & IFF_AUTOMEDIA) {
+        strcat(displayFlags, "AUTOMEDIA");
+    }
+    if (flags & IFF_DYNAMIC) {
+        strcat(displayFlags, "DYNAMIC");
+    }
+#endif
 }
 
 
