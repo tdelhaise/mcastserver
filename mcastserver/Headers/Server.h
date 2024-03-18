@@ -16,16 +16,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <syslog.h>
+#include <unistd.h>
 #include "ServerConfiguration.h"
 
-
-
-typedef struct __Server {
-    bool running;
-    int listenFileDescriptor;
-    ServerConfiguration* serverConfiguration;
-    bool shouldStop;
-} Server;
 
 
 typedef enum __ServerExitCode {
@@ -43,7 +36,6 @@ typedef enum __ServerExitCode {
     failedToGetAddressInfo
 } ServerExitCode;
 
-Server* serverCopy(Server* inputServer);
 void serverCreateWithConfiguration(ServerConfiguration* serverConfiguration);
 void serverFree(void);
 _Bool serverLaunchMulticastListener(void);

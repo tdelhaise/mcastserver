@@ -14,11 +14,20 @@
 
 static pthread_mutex_t serverMutex = PTHREAD_MUTEX_INITIALIZER;
 
+typedef struct __Server {
+    bool running;
+    int listenFileDescriptor;
+    ServerConfiguration* serverConfiguration;
+    bool shouldStop;
+    useconds_t delay;
+} Server;
+
 Server currentServer = {
     .running = false,
     .listenFileDescriptor = -1,
     .serverConfiguration = NULL,
-    .shouldStop = false
+    .shouldStop = false,
+    .delay = 200
 };
 
 void serverCreateWithConfiguration(ServerConfiguration* serverConfiguration) {
@@ -37,7 +46,6 @@ void serverOpenLogger(void) {
 void serverCloseLogger(void) {
     closelog();
 }
-
 
 Server* serverCopy(Server* inputServer) {
     Server* serverCopy = NULL;
@@ -115,6 +123,10 @@ ServerExitCode serverRun(void) {
         syslog(LOG_ERR,"serverRun: failed to prepared all contexts !");
         serverFree();
         return status;
+    }
+    
+    while(!currentServer.shouldStop) {
+        usleep(currentServer.delay);
     }
     
     syslog(LOG_INFO,"serverRun: free ressources !");
