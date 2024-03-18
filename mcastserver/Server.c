@@ -9,12 +9,10 @@
 #include "Headers/ServerConfiguration.h"
 #include "Headers/NetworkInterface.h"
 #include "Headers/Server.h"
+#include "Headers/MulticastListener.h"
 
-
-#define MSGBUFSIZE 512
 
 static pthread_mutex_t serverMutex = PTHREAD_MUTEX_INITIALIZER;
-
 
 Server currentServer = {
     .running = false,
@@ -23,7 +21,7 @@ Server currentServer = {
     .shouldStop = false
 };
 
-void ServerCreateWithConfiguration(ServerConfiguration* serverConfiguration) {
+void serverCreateWithConfiguration(ServerConfiguration* serverConfiguration) {
     if (pthread_mutex_lock(&serverMutex) == 0) {
         currentServer.serverConfiguration = serverConfiguration;
         pthread_mutex_unlock(&serverMutex);
@@ -32,8 +30,16 @@ void ServerCreateWithConfiguration(ServerConfiguration* serverConfiguration) {
     }
 }
 
+void serverOpenLogger(void) {
+    openlog("mcastserver", LOG_PID | LOG_NDELAY | LOG_CONS, LOG_DAEMON);
+}
 
-Server* ServerCopy(Server* inputServer) {
+void serverCloseLogger(void) {
+    closelog();
+}
+
+
+Server* serverCopy(Server* inputServer) {
     Server* serverCopy = NULL;
     
     int sizeOfStructServer = sizeof(Server);
@@ -48,10 +54,10 @@ Server* ServerCopy(Server* inputServer) {
     return serverCopy;
 }
 
-void ServerFree(void) {
+void serverFree(void) {
     if (pthread_mutex_lock(&serverMutex) == 0) {
         if (currentServer.serverConfiguration != NULL) {
-            ServerConfigurationFree(currentServer.serverConfiguration);
+            serverConfigurationFree(currentServer.serverConfiguration);
         }
         currentServer.serverConfiguration = NULL;
         pthread_mutex_unlock(&serverMutex);
@@ -60,7 +66,7 @@ void ServerFree(void) {
     }
 }
 
-void ServerShouldStop(void) {
+void serverStop(void) {
     if (pthread_mutex_unlock(&serverMutex) == 0) {
         currentServer.shouldStop = true;
         pthread_mutex_unlock(&serverMutex);
@@ -69,119 +75,50 @@ void ServerShouldStop(void) {
     }
 }
 
-_Bool __ServerCreateListenFileDescriptor(void) {
-    
-    //
-    // create what looks like an ordinary UDP socket
-    //
-    currentServer.listenFileDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
-    if (currentServer.listenFileDescriptor < 0) {
-        perror("socket");
-        return false;
-    }
-    //
-    // allow multiple sockets to use the same PORT number
-    //
-    u_int yes = 1;
-    if (setsockopt(currentServer.listenFileDescriptor, SOL_SOCKET, SO_REUSEADDR, (char*) &yes, sizeof(yes)) < 0) {
-        perror("Reusing ADDR failed");
-        return false;
-    }
-    
-    return true;
+_Bool serverLaunchMulticastListener(void) {
+    return false;
 }
 
-ServerExitCode ServerPrepareRun(void) {
-    
-    discoverNetworkInterface();
-    
-    if (pthread_mutex_lock(&serverMutex) == 0) {
-        if(__ServerCreateListenFileDescriptor() == false) {
-            pthread_mutex_unlock(&serverMutex);
-            ServerShouldStop();
-            return failedToCreateSocket;
-        }
-
-        // set up destination address
-        //
-        struct sockaddr_in addr;
-        memset(&addr, 0, sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = htonl(INADDR_ANY); // differs from sender
-        addr.sin_port = htons(currentServer.serverConfiguration->mcastJoinPort);
-        //
-        // bind to receive address
-        //
-        if (bind(currentServer.listenFileDescriptor, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
-            perror("bind");
-            pthread_mutex_unlock(&serverMutex);
-            ServerShouldStop();
-            return failedToBind;
-        }
-        //
-        // use setsockopt() to request that the kernel join a multicast group
-        //
-        struct ip_mreq mreq;
-        mreq.imr_multiaddr.s_addr = inet_addr(currentServer.serverConfiguration->mcastJoinGroupAddress);
-        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-        if (setsockopt(currentServer.listenFileDescriptor, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*) &mreq, sizeof(mreq)) < 0 ) {
-            perror("setsockopt");
-            pthread_mutex_unlock(&serverMutex);
-            ServerShouldStop();
-            return failedToSetSocketOptionAddMulticastMembership;
-        }
-        pthread_mutex_unlock(&serverMutex);
-        return serverSuccessfullyPrepared;
-    } else {
-        return failedToPrepareServer;
-    }
+_Bool serverLaunchSender(void) {
+    return false;
 }
 
-ServerExitCode ServerRun(void) {
+
+ServerExitCode serverPrepareRun(void) {
+    
+    syslog(LOG_INFO,"serverPrepareRun: started !");
+    
+    networkInterfaceDiscover();
+    
+    if (multicastListenerPrepareRun(currentServer.serverConfiguration->mcastJoinGroupAddress, currentServer.serverConfiguration->mcastJoinPort) == false ) {
+        syslog(LOG_ERR,"multicastListenerPrepareRun failed ! Exiting.");
+        exit(EXIT_FAILURE);
+    }
+    
+    syslog(LOG_INFO,"serverPrepareRun: finished !");
+    return serverSuccessfullyPrepared;
+}
+
+ServerExitCode serverRun(void) {
+    
+    syslog(LOG_INFO,"serverRun: launchMulticastListener");
+    serverLaunchMulticastListener();
+    
     if (currentServer.running) {
+        syslog(LOG_ERR,"serverRun: server is allready running !");
         return serverAllreadyRunning;
     }
     
-    int status = ServerPrepareRun();
+    syslog(LOG_INFO,"serverRun: initialized all contexts !");
+    int status = serverPrepareRun();
     if (status != serverSuccessfullyPrepared) {
-        ServerFree();
+        syslog(LOG_ERR,"serverRun: failed to prepared all contexts !");
+        serverFree();
         return status;
     }
-
-    while(currentServer.shouldStop == false) {
-        char host[NI_MAXHOST], service[NI_MAXSERV];
-        char msgbuf[MSGBUFSIZE];
-        memset(msgbuf, 0, sizeof(msgbuf));
-        // set up destination address
-        //
-        struct sockaddr_storage peerAddress;
-        memset(&peerAddress, 0, sizeof(peerAddress));
-        socklen_t peerAddressLength = sizeof(peerAddress);
-        
-        ssize_t nbytes = recvfrom( currentServer.listenFileDescriptor, msgbuf, MSGBUFSIZE, 0, (struct sockaddr *) &peerAddress, &peerAddressLength);
-        if (nbytes < 0) {
-            perror("recvfrom");
-            return failedToReceiveFrom;
-        }
-        msgbuf[nbytes] = '\0';
-        
-        int status = getnameinfo((struct sockaddr *) &peerAddress, peerAddressLength, host, NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICSERV);
-        if (status == 0) {
-            printf("Received %zd bytes from %s:%s => [%s]\n", nbytes, host, service, msgbuf);
-        } else {
-            fprintf(stderr, "getnameinfo: %s\n", gai_strerror(status));
-            return failedToGetNameInfo;
-        }
-                
-        ssize_t sentBytes = sendto(currentServer.listenFileDescriptor, msgbuf, nbytes, 0, (struct sockaddr *) &peerAddress, peerAddressLength);
-        if (sentBytes != nbytes) {
-            perror("sendto");
-            fprintf(stderr, "Error sending response\n");
-        } else {
-            fprintf(stdout, "Sent %ld byte(s) \n", sentBytes);
-        }
-    }
     
-    ServerFree();
+    syslog(LOG_INFO,"serverRun: free ressources !");
+    serverFree();
+    syslog(LOG_INFO,"serverRun: exit !");
     return successFullExit;
 }

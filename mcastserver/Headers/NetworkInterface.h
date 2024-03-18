@@ -21,8 +21,9 @@
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <syslog.h>
 
-_Bool discoverNetworkInterface(void);
+_Bool networkInterfaceDiscover(void);
 
 
 #endif /* NetworkInterface_h */

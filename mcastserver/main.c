@@ -9,14 +9,18 @@
 #include "Headers/Server.h"
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    ServerConfigurationSetMulticastJoinAddress("239.255.255.250");
     
-    ServerConfiguration* serverConfiguration = ServerConfigurationGet();
+    serverOpenLogger();
     
-    ServerCreateWithConfiguration(serverConfiguration);
+    serverConfigurationSetMulticastJoinAddress("239.255.255.250");
     
-    int exitCode = ServerRun();
+    ServerConfiguration* serverConfiguration = serverConfigurationGet();
+    
+    serverCreateWithConfiguration(serverConfiguration);
+    
+    int exitCode = serverRun();
+        
+    serverCloseLogger();
     
     return exitCode;
 }

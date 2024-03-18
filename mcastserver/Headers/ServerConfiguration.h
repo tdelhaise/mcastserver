@@ -13,6 +13,7 @@
 #include <string.h>
 #include <assert.h>
 #include <netinet/if_ether.h>
+#include <syslog.h>
 
 
 #define SERVER_CONFIGURATION_DEFAULT_MCAST_PORT 12567
@@ -25,10 +26,10 @@ struct __ServerConfiguration {
 
 typedef struct __ServerConfiguration ServerConfiguration;
 
-void ServerConfigurationSetMulticastJoinPort(uint16_t portNumber);
-void ServerConfigurationSetMulticastJoinAddress(const char* joinGroupAddress);
-ServerConfiguration* ServerConfigurationGet(void);
-void ServerConfigurationFree(ServerConfiguration* serverConfiguration);
-ServerConfiguration* ServerConfigurationCopy(ServerConfiguration* inputConfiguration);
+void serverConfigurationSetMulticastJoinPort(uint16_t portNumber);
+void serverConfigurationSetMulticastJoinAddress(const char* joinGroupAddress);
+ServerConfiguration* serverConfigurationGet(void);
+void serverConfigurationFree(ServerConfiguration* serverConfiguration);
+ServerConfiguration* serverConfigurationCopy(ServerConfiguration* inputConfiguration);
 
 #endif /* ServerConfiguration_h */

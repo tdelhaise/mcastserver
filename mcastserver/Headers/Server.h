@@ -15,7 +15,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <syslog.h>
 #include "ServerConfiguration.h"
+
 
 
 typedef struct __Server {
@@ -41,10 +43,12 @@ typedef enum __ServerExitCode {
     failedToGetAddressInfo
 } ServerExitCode;
 
-Server* ServerCopy(Server* inputServer);
-void ServerCreateWithConfiguration(ServerConfiguration* serverConfiguration);
-void ServerFree(void);
-ServerExitCode ServerRun(void);
-
+Server* serverCopy(Server* inputServer);
+void serverCreateWithConfiguration(ServerConfiguration* serverConfiguration);
+void serverFree(void);
+_Bool serverLaunchMulticastListener(void);
+ServerExitCode serverRun(void);
+void serverOpenLogger(void);
+void serverCloseLogger(void);
 
 #endif /* Server_h */

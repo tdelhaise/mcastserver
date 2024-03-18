@@ -12,20 +12,20 @@ ServerConfiguration currentServerConfiguration = {
     .mcastJoinPort = SERVER_CONFIGURATION_DEFAULT_MCAST_PORT
 };
 
-void ServerConfigurationSetMulticastJoinPort(uint16_t portNumber) {
+void serverConfigurationSetMulticastJoinPort(uint16_t portNumber) {
     assert(portNumber > 0);
     assert(portNumber < UINT16_MAX);
     currentServerConfiguration.mcastJoinPort = portNumber;
 }
 
-void ServerConfigurationSetMulticastJoinAddress(const char* joinGroupAddress) {
+void serverConfigurationSetMulticastJoinAddress(const char* joinGroupAddress) {
     if (joinGroupAddress != NULL) {
         assert(strlen(joinGroupAddress) <= MAX_JOIN_GROUP_ADDRESS_LEN);
         strcpy(currentServerConfiguration.mcastJoinGroupAddress,joinGroupAddress);
     }
 }
 
-ServerConfiguration* ServerConfigurationCopy(ServerConfiguration* inputConfiguration) {
+ServerConfiguration* serverConfigurationCopy(ServerConfiguration* inputConfiguration) {
     ServerConfiguration* serverConfigurationCopy = NULL;
     
     int sizeOfStructServerConfiguration = sizeof(ServerConfiguration);
@@ -38,11 +38,11 @@ ServerConfiguration* ServerConfigurationCopy(ServerConfiguration* inputConfigura
     return serverConfigurationCopy;
 }
 
-ServerConfiguration* ServerConfigurationGet(void) {
-    return ServerConfigurationCopy(&currentServerConfiguration);
+ServerConfiguration* serverConfigurationGet(void) {
+    return serverConfigurationCopy(&currentServerConfiguration);
 }
 
-void ServerConfigurationFree(ServerConfiguration* serverConfigurationCopy) {
+void serverConfigurationFree(ServerConfiguration* serverConfigurationCopy) {
     free(serverConfigurationCopy);
 }
 

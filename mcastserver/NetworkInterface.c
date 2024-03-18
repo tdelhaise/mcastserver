@@ -11,7 +11,7 @@
 
 
 
-const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
+const char* networkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
     if (socketAddress == NULL) {
         return "ERROR";
     }
@@ -177,7 +177,7 @@ const char* NetworkInterfaceGetFamillyName(struct sockaddr* socketAddress) {
 
 #define MIN_DISPLAY_FLAGS_LENGTH    15*16
 
-void NetworkInterfaceGetFlags(unsigned int flags, char displayFlags[MIN_DISPLAY_FLAGS_LENGTH]) {
+void networkInterfaceGetFlags(unsigned int flags, char displayFlags[MIN_DISPLAY_FLAGS_LENGTH]) {
     if (flags & IFF_BROADCAST) {
         strcat(displayFlags, "BROADCAST ");
     }
@@ -251,7 +251,7 @@ void NetworkInterfaceGetFlags(unsigned int flags, char displayFlags[MIN_DISPLAY_
 }
 
 
-_Bool discoverNetworkInterface(void) {
+_Bool networkInterfaceDiscover(void) {
  
     struct ifaddrs *interfaceAddresses, *interfaceAddress;
 
@@ -278,9 +278,9 @@ _Bool discoverNetworkInterface(void) {
             inet_ntop(AF_INET6, &ip6_address, networkAddress, INET6_ADDRSTRLEN);
         }
         
-        const char* famillyName = NetworkInterfaceGetFamillyName(interfaceAddress->ifa_addr);
+        const char* famillyName = networkInterfaceGetFamillyName(interfaceAddress->ifa_addr);
         char displayFlags[MIN_DISPLAY_FLAGS_LENGTH] = { 0 };
-        NetworkInterfaceGetFlags(interfaceAddress->ifa_flags, displayFlags);
+        networkInterfaceGetFlags(interfaceAddress->ifa_flags, displayFlags);
         fprintf(stdout,"[%s]\n\t\tfamilly [%s]\n\t\taddress [%s]\n\t\tflags   [%s]\n", interfaceAddress->ifa_name, famillyName, networkAddress, displayFlags);
     }
 

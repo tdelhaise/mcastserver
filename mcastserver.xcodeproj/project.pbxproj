@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		922A52022BA71C060055DE0C /* MulticastListener.c in Sources */ = {isa = PBXBuildFile; fileRef = 922A52012BA71C060055DE0C /* MulticastListener.c */; };
 		926C06FC2B95E28C006F661B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 926C06FB2B95E28C006F661B /* main.c */; };
 		926C07042B95E3FD006F661B /* ServerConfiguration.c in Sources */ = {isa = PBXBuildFile; fileRef = 926C07032B95E3FD006F661B /* ServerConfiguration.c */; };
 		926C07082B9625EF006F661B /* Server.c in Sources */ = {isa = PBXBuildFile; fileRef = 926C07072B9625EF006F661B /* Server.c */; };
@@ -36,6 +37,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		922A52002BA71C060055DE0C /* MulticastListener.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MulticastListener.h; sourceTree = "<group>"; };
+		922A52012BA71C060055DE0C /* MulticastListener.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MulticastListener.c; sourceTree = "<group>"; };
 		926C06F82B95E28C006F661B /* mcastserver */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mcastserver; sourceTree = BUILT_PRODUCTS_DIR; };
 		926C06FB2B95E28C006F661B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		926C07022B95E3FD006F661B /* ServerConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ServerConfiguration.h; sourceTree = "<group>"; };
@@ -97,6 +100,7 @@
 				926C07032B95E3FD006F661B /* ServerConfiguration.c */,
 				926C07072B9625EF006F661B /* Server.c */,
 				926C071C2B98D7F4006F661B /* NetworkInterface.c */,
+				922A52012BA71C060055DE0C /* MulticastListener.c */,
 			);
 			path = mcastserver;
 			sourceTree = "<group>";
@@ -105,6 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				926C071B2B98D7F4006F661B /* NetworkInterface.h */,
+				922A52002BA71C060055DE0C /* MulticastListener.h */,
 				926C07062B9625EF006F661B /* Server.h */,
 				926C07022B95E3FD006F661B /* ServerConfiguration.h */,
 			);
@@ -198,6 +203,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				922A52022BA71C060055DE0C /* MulticastListener.c in Sources */,
 				926C06FC2B95E28C006F661B /* main.c in Sources */,
 				926C07042B95E3FD006F661B /* ServerConfiguration.c in Sources */,
 				926C071D2B98D7F4006F661B /* NetworkInterface.c in Sources */,
