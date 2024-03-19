@@ -147,7 +147,7 @@ void multicastListenerRun(void) {
     int result = pthread_attr_init(&multicastListenerContext.listenerThreadAttributes);
     if ( result != 0 ) {
         const char* errorMessage = strerror(result);
-        syslog(LOG_ERR, "multicastListenerRun: failed to initialized thread attributes ! [%d] -> %s", result, errorMessage);
+        syslog(LOG_ERR, "multicastListenerRun: failed to initialized thread attributes !    [%d] -> %s", result, errorMessage);
         return;
     }
 

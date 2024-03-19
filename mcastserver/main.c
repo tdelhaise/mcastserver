@@ -12,7 +12,7 @@ int main(int argc, const char * argv[]) {
     
     serverOpenLogger();
     
-    serverConfigurationSetMulticastJoinAddress("239.255.255.250");
+    serverConfigurationSetMulticastJoinAddress(DEFAULT_MULTICAST_GROUP_ADDRESS);
     
     ServerConfiguration* serverConfiguration = serverConfigurationGet();
     
