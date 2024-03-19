@@ -27,7 +27,7 @@ Server currentServer = {
     .listenFileDescriptor = -1,
     .serverConfiguration = NULL,
     .shouldStop = false,
-    .delay = 200
+    .delay = 500
 };
 
 void serverCreateWithConfiguration(ServerConfiguration* serverConfiguration) {
@@ -83,8 +83,8 @@ void serverStop(void) {
     }
 }
 
-_Bool serverLaunchMulticastListener(void) {
-    return false;
+void serverLaunchMulticastListener(void) {
+    multicastListenerRun();
 }
 
 _Bool serverLaunchSender(void) {
@@ -109,8 +109,6 @@ ServerExitCode serverPrepareRun(void) {
 
 ServerExitCode serverRun(void) {
     
-    syslog(LOG_INFO,"serverRun: launchMulticastListener");
-    serverLaunchMulticastListener();
     
     if (currentServer.running) {
         syslog(LOG_ERR,"serverRun: server is allready running !");
@@ -124,6 +122,10 @@ ServerExitCode serverRun(void) {
         serverFree();
         return status;
     }
+    
+    syslog(LOG_INFO,"serverRun: launchMulticastListener");
+    serverLaunchMulticastListener();
+    syslog(LOG_INFO,"serverRun: Multicast Listener launched !");
     
     while(!currentServer.shouldStop) {
         usleep(currentServer.delay);

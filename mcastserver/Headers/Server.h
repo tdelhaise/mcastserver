@@ -38,7 +38,7 @@ typedef enum __ServerExitCode {
 
 void serverCreateWithConfiguration(ServerConfiguration* serverConfiguration);
 void serverFree(void);
-_Bool serverLaunchMulticastListener(void);
+void serverLaunchMulticastListener(void);
 ServerExitCode serverRun(void);
 void serverOpenLogger(void);
 void serverCloseLogger(void);

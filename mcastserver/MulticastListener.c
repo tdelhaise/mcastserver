@@ -50,6 +50,7 @@ _Bool __multicastListenerPrepareListenSocket(void) {
         return false;
     }
     
+    syslog(LOG_INFO, "__multicastListenerPrepareListenSocket: Successully prepared socket !");
     return true;
 }
 
@@ -139,16 +140,25 @@ void* multicastListenerMain(void* unusedArgument) {
 void multicastListenerRun(void) {
     
     if(multicastListenerContext.prepared == false) {
-        syslog(LOG_ERR, "MulticastListenerRun: MulticastListenerPrepareRun() must be called before this function !");
+        syslog(LOG_ERR, "multicastListenerRun: multicastListenerPrepareRun() must be called before this function !");
         return;
     }
     
-    if (pthread_create(&multicastListenerContext.listenerThread, &multicastListenerContext.listenerThreadAttributes, multicastListenerMain, NULL) != 0) {
-        syslog(LOG_ERR, "MulticastListenerRun: failed to launch thread !");
+    int result = pthread_attr_init(&multicastListenerContext.listenerThreadAttributes);
+    if ( result != 0 ) {
+        const char* errorMessage = strerror(result);
+        syslog(LOG_ERR, "multicastListenerRun: failed to initialized thread attributes ! [%d] -> %s", result, errorMessage);
         return;
     }
 
-    syslog(LOG_INFO, "MulticastListenerRun: Thread launched !");
+    result = pthread_create(&multicastListenerContext.listenerThread, &multicastListenerContext.listenerThreadAttributes, multicastListenerMain, NULL);
+    if ( result != 0 ) {
+        const char* errorMessage = strerror(result);
+        syslog(LOG_ERR, "multicastListenerRun: failed to launch thread ! [%d] -> %s", result, errorMessage);
+        return;
+    }
+
+    syslog(LOG_INFO, "multicastListenerRun: Thread launched !");
 }
 
 void multicastListenerWaitForTermination(void) {
