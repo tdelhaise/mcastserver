@@ -55,14 +55,6 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "239.255.255.250"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "12567"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "&quot;Salut trou du cul&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
