@@ -20,6 +20,7 @@
 #define MAX_PORT_NUMBER 6
 #define MAX_HOSTNAME 255
 #define MAX_MESSAGE 255
+#define DEFAULT_MULTICAST_GROUP_ADDRESS "239.255.255.250"
 
 int main(int argc, char *argv[])
 {
