@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
     int flags = 0;
     
     memset(&group,0,sizeof(group));
-    if (argc < 3) {
-        fprintf(stderr, "Usage: %s hostname port message\n", argv[0]);
+    if (argc < 1) {
+        fprintf(stderr, "Usage: %s message\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     
