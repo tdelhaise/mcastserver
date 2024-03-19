@@ -100,6 +100,8 @@ _Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_
 void* multicastListenerMain(void* unusedArgument) {
     syslog(LOG_INFO, "multicastListenerMain: started !");
     
+    int flags = 0;
+    
     while(multicastListenerContext.shouldStop == false) {
         char host[NI_MAXHOST], service[NI_MAXSERV];
         char msgbuf[multicastListenerContext.listenerMaxBufferSize];
@@ -110,7 +112,7 @@ void* multicastListenerMain(void* unusedArgument) {
         memset(&peerAddress, 0, sizeof(peerAddress));
         socklen_t peerAddressLength = sizeof(peerAddress);
         
-        ssize_t nbytes = recvfrom( multicastListenerContext.listenerSocket, msgbuf, multicastListenerContext.listenerMaxBufferSize, 0, (struct sockaddr *) &peerAddress, &peerAddressLength);
+        ssize_t nbytes = recvfrom( multicastListenerContext.listenerSocket, msgbuf, multicastListenerContext.listenerMaxBufferSize, flags, (struct sockaddr *) &peerAddress, &peerAddressLength);
         if (nbytes < 0) {
             syslog(LOG_ERR,"multicastListenerMain: encountered an error when calling recvfrom() ! %m");
             return NULL;
@@ -125,7 +127,7 @@ void* multicastListenerMain(void* unusedArgument) {
             return NULL;
         }
                 
-        ssize_t sentBytes = sendto(multicastListenerContext.listenerSocket, msgbuf, nbytes, 0, (struct sockaddr *) &peerAddress, peerAddressLength);
+        ssize_t sentBytes = sendto(multicastListenerContext.listenerSocket, msgbuf, nbytes, flags, (struct sockaddr *) &peerAddress, peerAddressLength);
         if (sentBytes != nbytes) {
             syslog(LOG_ERR, "multicastListenerMain: sendto() call failed ! %m");
         } else {
