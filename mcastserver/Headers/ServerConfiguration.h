@@ -13,7 +13,7 @@
 #include <string.h>
 #include <assert.h>
 #include <netinet/if_ether.h>
-#include <syslog.h>
+#include "Logger.h"
 
 
 #define SERVER_CONFIGURATION_DEFAULT_MCAST_PORT 12567

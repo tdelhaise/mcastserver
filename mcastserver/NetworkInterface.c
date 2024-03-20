@@ -256,7 +256,7 @@ _Bool networkInterfaceDiscover(void) {
     struct ifaddrs *interfaceAddresses, *interfaceAddress;
 
     if (getifaddrs(&interfaceAddresses) == -1) {
-        perror("getifaddrs");
+        logError("networkInterfaceDiscover: getifaddrs() call failed : %m");
         return false;
     }
 
@@ -264,7 +264,7 @@ _Bool networkInterfaceDiscover(void) {
      can free list later */
     for (interfaceAddress = interfaceAddresses; interfaceAddress != NULL; interfaceAddress = interfaceAddress->ifa_next) {
         if (interfaceAddress->ifa_addr == NULL) {
-            fprintf(stdout,"Ignoring interface: %s since its address is null\n", interfaceAddress->ifa_name);
+            logInfo("Ignoring interface: %s since its address is null\n", interfaceAddress->ifa_name);
             continue;
         }
         
@@ -281,7 +281,7 @@ _Bool networkInterfaceDiscover(void) {
         const char* famillyName = networkInterfaceGetFamillyName(interfaceAddress->ifa_addr);
         char displayFlags[MIN_DISPLAY_FLAGS_LENGTH] = { 0 };
         networkInterfaceGetFlags(interfaceAddress->ifa_flags, displayFlags);
-        fprintf(stdout,"[%s]\n\t\tfamilly [%s]\n\t\taddress [%s]\n\t\tflags   [%s]\n", interfaceAddress->ifa_name, famillyName, networkAddress, displayFlags);
+        logInfo("[%s]\n\t\tfamilly [%s]\n\t\taddress [%s]\n\t\tflags   [%s]\n", interfaceAddress->ifa_name, famillyName, networkAddress, displayFlags);
     }
 
     freeifaddrs(interfaceAddresses);

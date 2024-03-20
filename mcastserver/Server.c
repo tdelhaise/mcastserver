@@ -94,57 +94,56 @@ _Bool serverLaunchSender(void) {
 
 server_exit_code_t serverPrepareRun(void) {
     
-    syslog(LOG_INFO,"serverPrepareRun: started !");
+    logInfo("serverPrepareRun: started !");
     
     networkInterfaceDiscover();
     
     if (multicastListenerPrepareRun(currentServer.serverConfiguration->mcastJoinGroupAddress, currentServer.serverConfiguration->mcastJoinPort) == false ) {
-        syslog(LOG_ERR,"multicastListenerPrepareRun failed ! Exiting.");
+        logError("multicastListenerPrepareRun failed ! Exiting.");
         exit(EXIT_FAILURE);
     }
     
-    syslog(LOG_INFO,"serverPrepareRun: finished !");
+    logInfo("serverPrepareRun: finished !");
     return serverSuccessfullyPrepared;
 }
 
 void serverStopWorkerThreads(void) {
-    syslog(LOG_INFO,"serverStopWorkerThreads: stop multicast listener ...");
+    logInfo("serverStopWorkerThreads: stop multicast listener ...");
     multicastListenerStop();
 }
 
 void serverDoJob(void) {
-    syslog(LOG_INFO,"serverDoJob: ...");
+    logDebug("serverDoJob: ...");
     usleep(currentServer.delay);
 }
 
 server_exit_code_t serverRun(void) {
     
-    
     if (currentServer.running) {
-        syslog(LOG_ERR,"serverRun: server is allready running !");
+        logError("serverRun: server is allready running !");
         return serverAllreadyRunning;
     }
     
-    syslog(LOG_INFO,"serverRun: initialized all contexts !");
+    logInfo("serverRun: initialized all contexts !");
     int status = serverPrepareRun();
     if (status != serverSuccessfullyPrepared) {
-        syslog(LOG_ERR,"serverRun: failed to prepared all contexts !");
+        logError("serverRun: failed to prepared all contexts !");
         serverFree();
         return status;
     }
     
-    syslog(LOG_INFO,"serverRun: launchMulticastListener");
+    logInfo("serverRun: launchMulticastListener");
     serverLaunchMulticastListener();
-    syslog(LOG_INFO,"serverRun: Multicast Listener launched !");
+    logInfo("serverRun: Multicast Listener launched !");
     
     while(!currentServer.shouldStop) {
         serverDoJob();
     }
     
-    syslog(LOG_INFO,"serverRun: stop workers thread ...");
+    logInfo("serverRun: stop workers thread ...");
     serverStopWorkerThreads();
-    syslog(LOG_INFO,"serverRun: free ressources ...");
+    logInfo("serverRun: free ressources ...");
     serverFree();
-    syslog(LOG_INFO,"serverRun: exit !");
+    logInfo("serverRun: exit !");
     return successFullExit;
 }
