@@ -7,7 +7,7 @@
 
 #include "Headers/ServerConfiguration.h"
 
-ServerConfiguration currentServerConfiguration = {
+server_configuration_t currentServerConfiguration = {
     .mcastJoinGroupAddress = "",
     .mcastJoinPort = SERVER_CONFIGURATION_DEFAULT_MCAST_PORT
 };
@@ -25,11 +25,11 @@ void serverConfigurationSetMulticastJoinAddress(const char* joinGroupAddress) {
     }
 }
 
-ServerConfiguration* serverConfigurationCopy(ServerConfiguration* inputConfiguration) {
-    ServerConfiguration* serverConfigurationCopy = NULL;
+server_configuration_t* serverConfigurationCopy(server_configuration_t* inputConfiguration) {
+    server_configuration_t* serverConfigurationCopy = NULL;
     
-    int sizeOfStructServerConfiguration = sizeof(ServerConfiguration);
-    serverConfigurationCopy = (ServerConfiguration*) malloc(sizeOfStructServerConfiguration);
+    int sizeOfStructServerConfiguration = sizeof(server_configuration_t);
+    serverConfigurationCopy = (server_configuration_t*) malloc(sizeOfStructServerConfiguration);
     memset(serverConfigurationCopy,0,sizeOfStructServerConfiguration);
     
     strcpy(serverConfigurationCopy->mcastJoinGroupAddress, inputConfiguration->mcastJoinGroupAddress);
@@ -38,11 +38,11 @@ ServerConfiguration* serverConfigurationCopy(ServerConfiguration* inputConfigura
     return serverConfigurationCopy;
 }
 
-ServerConfiguration* serverConfigurationGet(void) {
+server_configuration_t* serverConfigurationGet(void) {
     return serverConfigurationCopy(&currentServerConfiguration);
 }
 
-void serverConfigurationFree(ServerConfiguration* serverConfigurationCopy) {
+void serverConfigurationFree(server_configuration_t* serverConfigurationCopy) {
     free(serverConfigurationCopy);
 }
 

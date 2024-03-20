@@ -17,12 +17,12 @@ static pthread_mutex_t serverMutex = PTHREAD_MUTEX_INITIALIZER;
 typedef struct __Server {
     bool running;
     int listenFileDescriptor;
-    ServerConfiguration* serverConfiguration;
+    server_configuration_t* serverConfiguration;
     bool shouldStop;
     useconds_t delay;
-} Server;
+} server_t;
 
-Server currentServer = {
+server_t currentServer = {
     .running = false,
     .listenFileDescriptor = -1,
     .serverConfiguration = NULL,
@@ -30,7 +30,7 @@ Server currentServer = {
     .delay = 500
 };
 
-void serverCreateWithConfiguration(ServerConfiguration* serverConfiguration) {
+void serverCreateWithConfiguration(server_configuration_t* serverConfiguration) {
     if (pthread_mutex_lock(&serverMutex) == 0) {
         currentServer.serverConfiguration = serverConfiguration;
         pthread_mutex_unlock(&serverMutex);
@@ -47,11 +47,11 @@ void serverCloseLogger(void) {
     closelog();
 }
 
-Server* serverCopy(Server* inputServer) {
-    Server* serverCopy = NULL;
+server_t* serverCopy(server_t* inputServer) {
+    server_t* serverCopy = NULL;
     
-    int sizeOfStructServer = sizeof(Server);
-    serverCopy = (Server*) malloc(sizeOfStructServer);
+    int sizeOfStructServer = sizeof(server_t);
+    serverCopy = (server_t*) malloc(sizeOfStructServer);
     memset(serverCopy,0,sizeOfStructServer);
     
     serverCopy->running = inputServer->running;
@@ -75,7 +75,7 @@ void serverFree(void) {
 }
 
 void serverStop(void) {
-    if (pthread_mutex_unlock(&serverMutex) == 0) {
+    if (pthread_mutex_lock(&serverMutex) == 0) {
         currentServer.shouldStop = true;
         pthread_mutex_unlock(&serverMutex);
     } else {
@@ -92,7 +92,7 @@ _Bool serverLaunchSender(void) {
 }
 
 
-ServerExitCode serverPrepareRun(void) {
+server_exit_code_t serverPrepareRun(void) {
     
     syslog(LOG_INFO,"serverPrepareRun: started !");
     
@@ -107,7 +107,17 @@ ServerExitCode serverPrepareRun(void) {
     return serverSuccessfullyPrepared;
 }
 
-ServerExitCode serverRun(void) {
+void serverStopWorkerThreads(void) {
+    syslog(LOG_INFO,"serverStopWorkerThreads: stop multicast listener ...");
+    multicastListenerStop();
+}
+
+void serverDoJob(void) {
+    syslog(LOG_INFO,"serverDoJob: ...");
+    usleep(currentServer.delay);
+}
+
+server_exit_code_t serverRun(void) {
     
     
     if (currentServer.running) {
@@ -128,10 +138,12 @@ ServerExitCode serverRun(void) {
     syslog(LOG_INFO,"serverRun: Multicast Listener launched !");
     
     while(!currentServer.shouldStop) {
-        usleep(currentServer.delay);
+        serverDoJob();
     }
     
-    syslog(LOG_INFO,"serverRun: free ressources !");
+    syslog(LOG_INFO,"serverRun: stop workers thread ...");
+    serverStopWorkerThreads();
+    syslog(LOG_INFO,"serverRun: free ressources ...");
     serverFree();
     syslog(LOG_INFO,"serverRun: exit !");
     return successFullExit;

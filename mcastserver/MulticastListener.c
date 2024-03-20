@@ -19,10 +19,10 @@ typedef struct __MulticastListenerContext {
     pthread_t listenerThread;
     pthread_attr_t listenerThreadAttributes;
     uint32_t listenerMaxBufferSize;
-} MulticastListenerContext;
+} multicast_listener_context_t;
 
 
-static MulticastListenerContext multicastListenerContext = {
+static multicast_listener_context_t multicastListenerContext = {
     .prepared = false,
     .shouldStop = false,
     .listenerMutex = PTHREAD_MUTEX_INITIALIZER,
@@ -164,9 +164,22 @@ void multicastListenerRun(void) {
 }
 
 void multicastListenerWaitForTermination(void) {
-    if(pthread_join(multicastListenerContext.listenerThread, NULL) != 0) {
-        syslog(LOG_ERR, "MulticastListenerWaitForTermination: failed to join thread !");
+    int result = pthread_join(multicastListenerContext.listenerThread, NULL);
+    if( result != 0) {
+        syslog(LOG_ERR, "multicastListenerWaitForTermination: failed to join thread ! %s", strerror(result));
+    } else {
+        syslog(LOG_INFO, "multicastListenerWaitForTermination: Thread terminated !");
     }
-    syslog(LOG_INFO, "MulticastListenerWaitForTermination: Thread terminated !");
+}
+
+void multicastListenerStop(void) {
+    if (multicastListenerContext.shouldStop == false) {
+        pthread_mutex_lock(&multicastListenerContext.listenerMutex);
+        multicastListenerContext.shouldStop = true;
+        syslog(LOG_INFO, "multicastListenerStop: stop set !");
+        pthread_mutex_unlock(&multicastListenerContext.listenerMutex);
+    } else {
+        syslog(LOG_INFO, "multicastListenerStop: stop allready set !");
+    }
 }
 

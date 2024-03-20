@@ -23,5 +23,6 @@
 void multicastListenerRun(void);
 _Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort);
 void multicastListenerShutdown(void);
+void multicastListenerStop(void);
 
 #endif /* MulticastListener_h */

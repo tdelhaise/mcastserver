@@ -20,17 +20,15 @@
 #define MAX_JOIN_GROUP_ADDRESS_LEN 256
 #define DEFAULT_MULTICAST_GROUP_ADDRESS "239.255.255.250"
 
-struct __ServerConfiguration {
+typedef struct __ServerConfiguration {
     char mcastJoinGroupAddress[MAX_JOIN_GROUP_ADDRESS_LEN];
     uint16_t mcastJoinPort;
-};
-
-typedef struct __ServerConfiguration ServerConfiguration;
+} server_configuration_t;
 
 void serverConfigurationSetMulticastJoinPort(uint16_t portNumber);
 void serverConfigurationSetMulticastJoinAddress(const char* joinGroupAddress);
-ServerConfiguration* serverConfigurationGet(void);
-void serverConfigurationFree(ServerConfiguration* serverConfiguration);
-ServerConfiguration* serverConfigurationCopy(ServerConfiguration* inputConfiguration);
+server_configuration_t* serverConfigurationGet(void);
+void serverConfigurationFree(server_configuration_t* serverConfiguration);
+server_configuration_t* serverConfigurationCopy(server_configuration_t* inputConfiguration);
 
 #endif /* ServerConfiguration_h */

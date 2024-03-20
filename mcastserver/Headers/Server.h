@@ -34,12 +34,12 @@ typedef enum __ServerExitCode {
     failedToReceiveFrom,
     failedToGetNameInfo,
     failedToGetAddressInfo
-} ServerExitCode;
+} server_exit_code_t;
 
-void serverCreateWithConfiguration(ServerConfiguration* serverConfiguration);
+void serverCreateWithConfiguration(server_configuration_t* serverConfiguration);
 void serverFree(void);
 void serverLaunchMulticastListener(void);
-ServerExitCode serverRun(void);
+server_exit_code_t serverRun(void);
 void serverOpenLogger(void);
 void serverCloseLogger(void);
 

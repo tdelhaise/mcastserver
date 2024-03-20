@@ -14,7 +14,7 @@ int main(int argc, const char * argv[]) {
     
     serverConfigurationSetMulticastJoinAddress(DEFAULT_MULTICAST_GROUP_ADDRESS);
     
-    ServerConfiguration* serverConfiguration = serverConfigurationGet();
+    server_configuration_t* serverConfiguration = serverConfigurationGet();
     
     serverCreateWithConfiguration(serverConfiguration);
     
