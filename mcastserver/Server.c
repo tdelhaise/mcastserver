@@ -113,7 +113,7 @@ void serverStopWorkerThreads(void) {
 }
 
 void serverDoJob(void) {
-    logDebug("serverDoJob: ...");
+    // logDebug("serverDoJob: ...");
     usleep(currentServer.delay);
 }
 
