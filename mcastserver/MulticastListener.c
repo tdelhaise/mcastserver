@@ -7,7 +7,6 @@
 
 #include "Headers/MulticastListener.h"
 
-
 #define MSGBUFSIZE 512
 
 
@@ -19,6 +18,7 @@ typedef struct __MulticastListenerContext {
     pthread_t listenerThread;
     pthread_attr_t listenerThreadAttributes;
     uint32_t listenerMaxBufferSize;
+    message_queue_t* messageQueue;
 } multicast_listener_context_t;
 
 
@@ -28,7 +28,8 @@ static multicast_listener_context_t multicastListenerContext = {
     .listenerMutex = PTHREAD_MUTEX_INITIALIZER,
     .listenerSocket = -1,
     .listenerThreadAttributes = 0,
-    .listenerMaxBufferSize = 1024
+    .listenerMaxBufferSize = 1024,
+    .messageQueue = NULL
 };
 
 _Bool __multicastListenerPrepareListenSocket(void) {
@@ -84,17 +85,30 @@ _Bool __multicastListenerBindSocket(const char* multicastJoinGroupAddress, uint1
     return true;
 }
 
-_Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort) {
+_Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort, message_queue_t* serverMessageQueue) {
+    
+    if(serverMessageQueue == NULL) {
+        logError("multicastListenerPrepareRun: invalid parameter for serverMessageQueue !");
+        return false;
+    }
+    if(multicastJoinGroupAddress == NULL || strlen(multicastJoinGroupAddress) == 0 ) {
+        logError("multicastListenerPrepareRun: invalid multicastJoinGroupAddress parameter !");
+        return false;
+    }
+    
+    multicastListenerContext.messageQueue = serverMessageQueue;
     
     if(__multicastListenerPrepareListenSocket() &&
-       __multicastListenerBindSocket(multicastJoinGroupAddress, multicastJoinPort)) {
-        multicastListenerContext.prepared = true;
-        return true;
-    }
+       __multicastListenerBindSocket(multicastJoinGroupAddress, multicastJoinPort) ) {
         
-    multicastListenerContext.prepared = false;
-    logInfo("multicastListenerPrepareRun: Successully setup !");
-    return false;
+        multicastListenerContext.prepared = true;
+        logInfo("multicastListenerPrepareRun: Successfully setup !");
+        return true;
+    } else {
+        multicastListenerContext.prepared = false;
+        logError("multicastListenerPrepareRun: failed to setup !");
+        return false;
+    }
 }
 
 void* multicastListenerMain(void* unusedArgument) {

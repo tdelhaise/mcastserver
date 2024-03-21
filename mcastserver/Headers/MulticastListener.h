@@ -19,9 +19,10 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "Logger.h"
+#include "MessageQueue.h"
 
 void multicastListenerRun(void);
-_Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort);
+_Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort, message_queue_t* serverMessageQueue);
 void multicastListenerShutdown(void);
 void multicastListenerStop(void);
 

@@ -97,7 +97,7 @@ server_exit_code_t serverPrepareRun(void) {
     
     networkInterfaceDiscover();
     
-    if (multicastListenerPrepareRun(currentServer.serverConfiguration->mcastJoinGroupAddress, currentServer.serverConfiguration->mcastJoinPort) == false ) {
+    if (multicastListenerPrepareRun(currentServer.serverConfiguration->mcastJoinGroupAddress, currentServer.serverConfiguration->mcastJoinPort, currentServer.messageQueue) == false ) {
         logError("multicastListenerPrepareRun failed ! Exiting.");
         exit(EXIT_FAILURE);
     }
@@ -111,9 +111,18 @@ void serverStopWorkerThreads(void) {
     multicastListenerStop();
 }
 
+void serverDispatchMessage(message_t* message) {
+    
+}
+
 void serverDoJob(void) {
     // logDebug("serverDoJob: ...");
     usleep(currentServer.delay);
+    
+    message_t* message = messageQueuePeekMessage(currentServer.messageQueue);
+    if (message != NULL) {
+        serverDispatchMessage(message);
+    }
 }
 
 server_exit_code_t serverRun(void) {
@@ -123,7 +132,7 @@ server_exit_code_t serverRun(void) {
         return serverAllreadyRunning;
     }
     
-    logInfo("serverRun: initialized all contexts !");
+    logDebug("serverRun: will try to initialize all contexts !");
     int status = serverPrepareRun();
     if (status != serverSuccessfullyPrepared) {
         logError("serverRun: failed to prepared all contexts !");
@@ -131,7 +140,7 @@ server_exit_code_t serverRun(void) {
         return status;
     }
     
-    logInfo("serverRun: launchMulticastListener");
+    logDebug("serverRun: launchMulticastListener");
     serverLaunchMulticastListener();
     logInfo("serverRun: Multicast Listener launched !");
     
