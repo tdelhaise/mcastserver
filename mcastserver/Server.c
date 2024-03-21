@@ -10,6 +10,7 @@
 #include "Headers/NetworkInterface.h"
 #include "Headers/Server.h"
 #include "Headers/MulticastListener.h"
+#include "Headers/MessageQueue.h"
 
 
 static pthread_mutex_t serverMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -20,22 +21,30 @@ typedef struct __Server {
     server_configuration_t* serverConfiguration;
     bool shouldStop;
     useconds_t delay;
+    message_queue_t* messageQueue;
 } server_t;
 
-server_t currentServer = {
+static server_t currentServer = {
     .running = false,
     .listenFileDescriptor = -1,
     .serverConfiguration = NULL,
     .shouldStop = false,
-    .delay = 500
+    .delay = 500,
+    .messageQueue = NULL
 };
 
 void serverCreateWithConfiguration(server_configuration_t* serverConfiguration) {
     if (pthread_mutex_lock(&serverMutex) == 0) {
         currentServer.serverConfiguration = serverConfiguration;
+        currentServer.messageQueue = messageQueueCreate();
         pthread_mutex_unlock(&serverMutex);
+        if(currentServer.messageQueue == NULL) {
+            logError("serverCreateWithConfiguration: failed to create message queue !");
+            exit(EXIT_FAILURE);
+        }
     } else {
-        
+        logError("serverCreateWithConfiguration: failed to aquire mutex !");
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -47,30 +56,20 @@ void serverCloseLogger(void) {
     closelog();
 }
 
-server_t* serverCopy(server_t* inputServer) {
-    server_t* serverCopy = NULL;
-    
-    int sizeOfStructServer = sizeof(server_t);
-    serverCopy = (server_t*) malloc(sizeOfStructServer);
-    memset(serverCopy,0,sizeOfStructServer);
-    
-    serverCopy->running = inputServer->running;
-    serverCopy->shouldStop = inputServer->shouldStop;
-    serverCopy->listenFileDescriptor = inputServer->listenFileDescriptor;
-    serverCopy->serverConfiguration = inputServer->serverConfiguration;
-    
-    return serverCopy;
-}
-
 void serverFree(void) {
     if (pthread_mutex_lock(&serverMutex) == 0) {
         if (currentServer.serverConfiguration != NULL) {
             serverConfigurationFree(currentServer.serverConfiguration);
         }
         currentServer.serverConfiguration = NULL;
+        if (currentServer.messageQueue != NULL) {
+            if( messageQueueDelete(currentServer.messageQueue) == false) {
+                logError("serverFree: failed to delete message queue !");
+            }
+        }
         pthread_mutex_unlock(&serverMutex);
     } else {
-        
+        logError("serverFree: failed to acquire mutex !");
     }
 }
 

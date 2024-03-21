@@ -156,7 +156,6 @@ message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_ki
 
 message_t* messageQueuePeekMessage(message_queue_t* queue) {
     message_t* peekMessage = NULL;
-    message_t* newHead = NULL;
     
     if(messageQueueCheckQueueConsistancy(queue) == false) {
         return NULL;
