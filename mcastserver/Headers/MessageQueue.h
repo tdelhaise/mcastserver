@@ -30,6 +30,7 @@ typedef struct __Message {
 } message_t;
 
 typedef struct __MessageQueue {
+    _Bool opened;
     pthread_mutex_t mutex;
     uint32_t messageCount;
     message_t* head;
@@ -39,5 +40,8 @@ typedef struct __MessageQueue {
 message_queue_t* messageQueueCreate(void);
 _Bool messageQueuePostMessage(message_queue_t* queue, message_t* message);
 message_t* messageQueuePeekMessage(message_queue_t* queue);
+_Bool messageQueueDelete(message_queue_t* queue);
+message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_kind_t kind);
+_Bool messageQueueDeleteMessage(message_t* messageToDelete);
 
 #endif /* MessageQueue_h */

@@ -25,6 +25,7 @@ message_queue_t* messageQueueCreate(void) {
     newMessageQueue->head = NULL;
     newMessageQueue->end = NULL;
     newMessageQueue->messageCount = 0;
+    newMessageQueue->opened = true;
     
     return newMessageQueue;
 }
@@ -63,6 +64,11 @@ _Bool messageQueueCheckQueueConsistancy(message_queue_t* queue) {
         return false;
     }
         
+    if (queue->opened == false) {
+        logError("messageQueueCheckQueueConsistancy: invalid queue state ! Queue must be opened !");
+        return false;
+    }
+    
     if (queue->head == NULL && queue->messageCount != 0) {
         logError("messageQueueCheckQueueConsistancy: Queue inconsitancy ! head field can't be NULL and message count with a value different of zero !");
         return false;
@@ -84,6 +90,68 @@ _Bool messageQueueCheckQueueConsistancy(message_queue_t* queue) {
     }
 
     return true;
+}
+
+_Bool messageQueueDelete(message_queue_t* queue) {
+    message_t* message = NULL;
+    if(messageQueueCheckQueueConsistancy(queue) == false) {
+        return false;
+    }
+    if(pthread_mutex_lock(&queue->mutex) == 0) {
+        queue->opened = false;
+        message = queue->head;
+        while( message != NULL ) {
+            message_t* nextMessage = message->next;
+            if( messageQueueDeleteMessage(message) == false ) {
+                logWarning("messageQueueDelete: failed to delete message !");
+            }
+            message = nextMessage;
+        }
+        queue->end = NULL;
+        queue->head = NULL;
+        queue->messageCount = 0;
+        pthread_mutex_unlock(&queue->mutex);
+        if(pthread_mutex_destroy(&queue->mutex) != 0) {
+            logError("messageQueueDelete: unable to destroy mutex of the queue ! %m");
+        }
+        free(queue);
+    } else {
+        logError("messageQueueDelete: unable to aquire mutex of the queue ! %m");
+        return false;
+    }
+    return true;
+}
+
+message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_kind_t kind) {
+    message_t* newMessage = NULL;
+    
+    if(data == NULL) {
+        logError("messageQueueCreateMessage: data parameter is null !");
+        return NULL;
+    }
+    
+    if(dataLength == 0) {
+        logError("messageQueueCreateMessage: dataLength parameter is equal to zero !");
+        return NULL;
+    }
+
+    if(kind == undefined) {
+        logError("messageQueueCreateMessage: kind parameter is undefined !");
+        return NULL;
+    }
+    
+    newMessage = malloc(sizeof(message_t));
+    if(newMessage == NULL) {
+        logError("messageQueueCreateMessage: failed to allocate new message !");
+        return NULL;
+    }
+    
+    newMessage->data = data;
+    newMessage->dataLength = dataLength;
+    newMessage->kind = kind;
+    newMessage->next = NULL;
+    
+    return newMessage;
 }
 
 message_t* messageQueuePeekMessage(message_queue_t* queue) {
@@ -113,6 +181,24 @@ message_t* messageQueuePeekMessage(message_queue_t* queue) {
     }
 
     return peekMessage;
+}
+
+_Bool messageQueueDeleteMessage(message_t* messageToDelete) {
+    if(messageQueueCheckMessageConsistancy(messageToDelete) == false) {
+        return false;
+    }
+    messageToDelete->next = NULL;
+    
+    if(messageToDelete->data != NULL) {
+        free(messageToDelete->data);
+        messageToDelete->data = NULL;
+    } else {
+        logError("messageQueueDeleteMessage: data pointer is NULL where it should not !");
+    }
+    
+    free(messageToDelete);
+    messageToDelete = NULL;
+    return true;
 }
 
 _Bool messageQueuePostMessage(message_queue_t* queue, message_t* message) {
