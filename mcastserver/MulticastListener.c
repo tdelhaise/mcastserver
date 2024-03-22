@@ -17,7 +17,7 @@ typedef struct __MulticastListenerContext {
     int listenerSocket;
     pthread_t listenerThread;
     pthread_attr_t listenerThreadAttributes;
-    uint32_t listenerMaxBufferSize;
+    size_t listenerMaxBufferSize;
     message_queue_t* messageQueue;
 } multicast_listener_context_t;
 
@@ -111,42 +111,115 @@ _Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_
     }
 }
 
+void multicastListenerResolvePeerAddress(struct sockaddr_storage* peerAddress, socklen_t peerAddressLength, char* hostname, int hostnameLength, char* service, int serviceLength) {
+    if(hostnameLength < NI_MAXHOST) {
+        logError("multicastListenerResolvePeerAddress: hostnameLength parameter value less than NI_MAXHOST");
+        return;
+    }
+    if(serviceLength < NI_MAXSERV) {
+        logError("multicastListenerResolvePeerAddress: serviceLength parameter value less than NI_MAXSERV");
+        return;
+    }
+    
+    int status = getnameinfo((struct sockaddr *) peerAddress, peerAddressLength, hostname, hostnameLength, service, serviceLength, NI_NUMERICSERV);
+    if (status == 0) {
+        logInfo("multicastListenerResolvePeerAddress: Peer address resolved to %s:%s\n", hostname, service);
+    } else {
+        logError("multicastListenerResolvePeerAddress: getnameinfo: %s\n", gai_strerror(status));
+        return;
+    }
+}
+
+_Bool multicastListenerPrepareMessageToPost(int socket, const char* receivedData, ssize_t dataLength, struct sockaddr* peerAddress, socklen_t peerAddressLength, message_t** outputMessage) {
+    if(outputMessage == NULL) {
+        logError("multicastListenerPrepareMessageToPost: outputMessage parameter is NULL");
+        return false;
+    }
+    ssize_t multicastListenerStorageSize = sizeof(multicast_listener_storage_t);
+    if(dataLength > MAX_RECEIVED_DATA) {
+        logError("multicastListenerPrepareMessageToPost: dataLength value is greather than the maximum size accepted: [%ld] vs [%ld] ", dataLength, MAX_RECEIVED_DATA);
+        return false;
+    }
+    multicast_listener_storage_t* multicastListenerStorage = malloc(multicastListenerStorageSize);
+    if(multicastListenerStorage == NULL) {
+        logError("multicastListenerPrepareMessageToPost: failed to allocate multicast_listener_storage_t aka [%ld] bytes", multicastListenerStorageSize);
+        *outputMessage = NULL;
+        return false;
+    }
+    memset(multicastListenerStorage, 0, multicastListenerStorageSize);
+    
+    multicastListenerStorage->socket = socket;
+    multicastListenerStorage->dataLength = dataLength;
+    multicastListenerStorage->peerAddressLength = peerAddressLength;
+    memcpy(&multicastListenerStorage->receivedData, receivedData, dataLength);
+    memcpy(&multicastListenerStorage->peerAddress, peerAddress, peerAddressLength);
+    
+    ssize_t messageSize = sizeof(message_t);
+    message_t* message = malloc(messageSize);
+    if(message == NULL) {
+        logError("multicastListenerPrepareMessageToPost: failed to allocate message_t aka [%ld] bytes", messageSize);
+        free(multicastListenerStorage);
+        *outputMessage = NULL;
+        return false;
+    }
+    
+    message->data = multicastListenerStorage;
+    message->dataLength = multicastListenerStorageSize;
+    message->next = NULL;
+    message->kind = incommingPacket;
+    
+    *outputMessage = message;
+    
+    return true;
+}
+
 void* multicastListenerMain(void* unusedArgument) {
     logInfo("multicastListenerMain: started !");
     
     int flags = 0;
     
     while(multicastListenerContext.shouldStop == false) {
-        char host[NI_MAXHOST], service[NI_MAXSERV];
-        char msgbuf[multicastListenerContext.listenerMaxBufferSize];
-        memset(msgbuf, 0, sizeof(msgbuf));
+        char host[NI_MAXHOST];
+        char service[NI_MAXSERV];
+        char buffer[multicastListenerContext.listenerMaxBufferSize];
+        memset(buffer, 0, sizeof(buffer));
+        host[0] = '\0';
+        service[0] = '\0';
         // set up destination address
         //
         struct sockaddr_storage peerAddress;
-        memset(&peerAddress, 0, sizeof(peerAddress));
-        socklen_t peerAddressLength = sizeof(peerAddress);
+        unsigned int peerAddressSize = sizeof(peerAddress);
+        memset(&peerAddress, 0, peerAddressSize);
+        socklen_t peerAddressLength = peerAddressSize;
         
-        ssize_t nbytes = recvfrom( multicastListenerContext.listenerSocket, msgbuf, multicastListenerContext.listenerMaxBufferSize, flags, (struct sockaddr *) &peerAddress, &peerAddressLength);
+        ssize_t nbytes = recvfrom( multicastListenerContext.listenerSocket, buffer, multicastListenerContext.listenerMaxBufferSize, flags, (struct sockaddr *) &peerAddress, &peerAddressLength);
         if (nbytes < 0) {
             logError("multicastListenerMain: encountered an error when calling recvfrom() ! %m");
             return NULL;
         }
-        msgbuf[nbytes] = '\0';
+        buffer[nbytes] = '\0';
         
-        int status = getnameinfo((struct sockaddr *) &peerAddress, peerAddressLength, host, NI_MAXHOST, service, NI_MAXSERV, NI_NUMERICSERV);
-        if (status == 0) {
-            logInfo("multicastListenerMain: Received %zd bytes from %s:%s => [%s]\n", nbytes, host, service, msgbuf);
-        } else {
-            logError("multicastListenerMain: getnameinfo: %s\n", gai_strerror(status));
-            return NULL;
+        multicastListenerResolvePeerAddress(&peerAddress, peerAddressLength, host, NI_MAXHOST, service, NI_MAXSERV);
+        logInfo("multicastListenerMain: Received %zd bytes from %s:%s => [%s]\n", nbytes, host, service, buffer);
+        
+        message_t* outputMessage = NULL;
+        if(multicastListenerPrepareMessageToPost(multicastListenerContext.listenerSocket, buffer,nbytes,(struct sockaddr *)&peerAddress,peerAddressLength,&outputMessage) == false) {
+            logError("multicastListenerMain: encountered an error when preparing message to post !");
+        }
+        if (outputMessage != NULL && messageQueuePostMessage(multicastListenerContext.messageQueue, outputMessage) == false) {
+            logError("multicastListenerMain: encountered an error when posting received message");
+            // free unused message
+            messageQueueDeleteMessage(outputMessage);
         }
                 
-        ssize_t sentBytes = sendto(multicastListenerContext.listenerSocket, msgbuf, nbytes, flags, (struct sockaddr *) &peerAddress, peerAddressLength);
+        /*
+        ssize_t sentBytes = sendto(multicastListenerContext.listenerSocket, buffer, nbytes, flags, (struct sockaddr *) &peerAddress, peerAddressLength);
         if (sentBytes != nbytes) {
             logError("multicastListenerMain: sendto() call failed ! %m");
         } else {
             logInfo("multicastListenerMain: Sent %ld byte(s) \n", sentBytes);
         }
+        */
     }
 
     syslog(LOG_INFO, "multicastListenerMain: ended !");

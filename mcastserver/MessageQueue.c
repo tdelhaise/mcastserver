@@ -79,7 +79,7 @@ _Bool messageQueueCheckQueueConsistancy(message_queue_t* queue) {
         return false;
     }
     
-    if( queue->head == queue->end && queue->messageCount != 1) {
+    if( queue->head != NULL && queue->head == queue->end && queue->messageCount != 1) {
         logError("messageQueueCheckQueueConsistancy: Queue inconsitancy ! head field can't be equal to end field with a messageCount != 1 !");
         return false;
     }
@@ -122,7 +122,7 @@ _Bool messageQueueDelete(message_queue_t* queue) {
     return true;
 }
 
-message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_kind_t kind) {
+message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_kind_t kind, message_structure_t structure) {
     message_t* newMessage = NULL;
     
     if(data == NULL) {
@@ -139,6 +139,11 @@ message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_ki
         logError("messageQueueCreateMessage: kind parameter is undefined !");
         return NULL;
     }
+
+    if(structure == unknown) {
+        logError("messageQueueCreateMessage: structure parameter is unknown !");
+        return NULL;
+    }
     
     newMessage = malloc(sizeof(message_t));
     if(newMessage == NULL) {
@@ -149,6 +154,7 @@ message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_ki
     newMessage->data = data;
     newMessage->dataLength = dataLength;
     newMessage->kind = kind;
+    newMessage->structure = structure;
     newMessage->next = NULL;
     
     return newMessage;

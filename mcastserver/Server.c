@@ -29,7 +29,7 @@ static server_t currentServer = {
     .listenFileDescriptor = -1,
     .serverConfiguration = NULL,
     .shouldStop = false,
-    .delay = 500,
+    .delay = 1000,
     .messageQueue = NULL
 };
 
@@ -112,6 +112,7 @@ void serverStopWorkerThreads(void) {
 }
 
 void serverDispatchMessage(message_t* message) {
+    logInfo("serverDispatchMessage: received a new message kind [%d] with [%ld] bytes of data.", message->kind, message->dataLength);
     
 }
 

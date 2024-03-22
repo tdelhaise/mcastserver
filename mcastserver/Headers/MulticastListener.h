@@ -21,6 +21,16 @@
 #include "Logger.h"
 #include "MessageQueue.h"
 
+#define MAX_RECEIVED_DATA 2048L
+
+typedef struct __MulticastListenerStorage {
+    int socket;
+    ssize_t dataLength;
+    char receivedData[MAX_RECEIVED_DATA];
+    socklen_t peerAddressLength;
+    struct sockaddr peerAddress;
+} multicast_listener_storage_t;
+
 void multicastListenerRun(void);
 _Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort, message_queue_t* serverMessageQueue);
 void multicastListenerShutdown(void);

@@ -22,8 +22,15 @@ typedef enum __MessageKind {
     incommingPacket
 } message_kind_t;
 
+typedef enum __MessageStructure {
+    unknown = 0,
+    multicastListenerStorage,
+} message_structure_t;
+
+
 typedef struct __Message {
     message_kind_t kind;
+    message_structure_t structure;
     void* data;
     size_t dataLength;
     struct __Message* next;
@@ -41,7 +48,7 @@ message_queue_t* messageQueueCreate(void);
 _Bool messageQueuePostMessage(message_queue_t* queue, message_t* message);
 message_t* messageQueuePeekMessage(message_queue_t* queue);
 _Bool messageQueueDelete(message_queue_t* queue);
-message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_kind_t kind);
+message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_kind_t kind, message_structure_t structure);
 _Bool messageQueueDeleteMessage(message_t* messageToDelete);
 
 #endif /* MessageQueue_h */

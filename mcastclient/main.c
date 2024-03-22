@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -22,6 +23,25 @@
 #define MAX_MESSAGE 255
 #define DEFAULT_MULTICAST_GROUP_ADDRESS "239.255.255.250"
 #define DEFAULT_MULTICAST_GROUP_PORT 12567
+
+void resolvePeerAddress(struct sockaddr_storage* peerAddress, socklen_t peerAddressLength, char* hostname, int hostnameLength, char* service, int serviceLength) {
+    if(hostnameLength < NI_MAXHOST) {
+        fprintf(stderr,"resolvePeerAddress: hostnameLength parameter value less than NI_MAXHOST");
+        return;
+    }
+    if(serviceLength < NI_MAXSERV) {
+        fprintf(stderr,"resolvePeerAddress: serviceLength parameter value less than NI_MAXSERV");
+        return;
+    }
+    
+    int status = getnameinfo((struct sockaddr *) peerAddress, peerAddressLength, hostname, hostnameLength, service, serviceLength, NI_NUMERICSERV);
+    if (status == 0) {
+        fprintf(stdout,"resolvePeerAddress: Peer address resolved to %s:%s\n", hostname, service);
+    } else {
+        fprintf(stderr,"resolvePeerAddress: getnameinfo: %s\n", gai_strerror(status));
+        return;
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -92,8 +112,15 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     
+    char host[NI_MAXHOST];
+    char service[NI_MAXSERV];
+    host[0] = '\0';
+    service[0] = '\0';
+    
+    resolvePeerAddress(&peerAddress, peerAddressLength, host, NI_MAXHOST, service, NI_MAXSERV);
+
     buffer[nread] = '\0';
-    printf("Received %zd bytes: %s\n", nread, buffer);
+    printf("Received %zd bytes: %s from %s:%s\n", nread, buffer, host, service);
     
     close(socketFileDescriptor);
 
