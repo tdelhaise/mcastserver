@@ -10,6 +10,7 @@
 #include "Headers/NetworkInterface.h"
 #include "Headers/Server.h"
 #include "Headers/MulticastListener.h"
+#include "Headers/Sender.h"
 #include "Headers/MessageQueue.h"
 
 
@@ -21,7 +22,8 @@ typedef struct __Server {
     server_configuration_t* serverConfiguration;
     bool shouldStop;
     useconds_t delay;
-    message_queue_t* messageQueue;
+    message_queue_t* incommingQueue;
+    message_queue_t* outgoingQueue;
 } server_t;
 
 static server_t currentServer = {
@@ -30,16 +32,18 @@ static server_t currentServer = {
     .serverConfiguration = NULL,
     .shouldStop = false,
     .delay = 1000,
-    .messageQueue = NULL
+    .incommingQueue = NULL,
+    .outgoingQueue = NULL,
 };
 
 void serverCreateWithConfiguration(server_configuration_t* serverConfiguration) {
     if (pthread_mutex_lock(&serverMutex) == 0) {
         currentServer.serverConfiguration = serverConfiguration;
-        currentServer.messageQueue = messageQueueCreate();
+        currentServer.incommingQueue = messageQueueCreate();
+        currentServer.outgoingQueue = messageQueueCreate();
         pthread_mutex_unlock(&serverMutex);
-        if(currentServer.messageQueue == NULL) {
-            logError("serverCreateWithConfiguration: failed to create message queue !");
+        if(currentServer.incommingQueue == NULL || currentServer.outgoingQueue == NULL) {
+            logError("serverCreateWithConfiguration: failed to create message queues !");
             exit(EXIT_FAILURE);
         }
     } else {
@@ -62,8 +66,13 @@ void serverFree(void) {
             serverConfigurationFree(currentServer.serverConfiguration);
         }
         currentServer.serverConfiguration = NULL;
-        if (currentServer.messageQueue != NULL) {
-            if( messageQueueDelete(currentServer.messageQueue) == false) {
+        if (currentServer.incommingQueue != NULL) {
+            if( messageQueueDelete(currentServer.incommingQueue) == false) {
+                logError("serverFree: failed to delete message queue !");
+            }
+        }
+        if (currentServer.outgoingQueue != NULL) {
+            if( messageQueueDelete(currentServer.outgoingQueue) == false) {
                 logError("serverFree: failed to delete message queue !");
             }
         }
@@ -82,12 +91,14 @@ void serverStop(void) {
     }
 }
 
-void serverLaunchMulticastListener(void) {
-    multicastListenerRun();
+_Bool serverLaunchMulticastListener(void) {
+    logInfo("serverLaunchMulticastListener: started !");
+    return multicastListenerRun();
 }
 
 _Bool serverLaunchSender(void) {
-    return false;
+    logInfo("serverLaunchSender: started !");
+    return senderRun();
 }
 
 
@@ -97,9 +108,15 @@ server_exit_code_t serverPrepareRun(void) {
     
     networkInterfaceDiscover();
     
-    if (multicastListenerPrepareRun(currentServer.serverConfiguration->mcastJoinGroupAddress, currentServer.serverConfiguration->mcastJoinPort, currentServer.messageQueue) == false ) {
-        logError("multicastListenerPrepareRun failed ! Exiting.");
+    if (multicastListenerPrepareRun(currentServer.serverConfiguration->mcastJoinGroupAddress, currentServer.serverConfiguration->mcastJoinPort, currentServer.incommingQueue) == false ) {
+        logError("serverPrepareRun: multicast listener preparation failed ! Exiting.");
         exit(EXIT_FAILURE);
+    }
+    
+    if(senderPrepareRun(currentServer.outgoingQueue) == false ) {
+        logError("serverPrepareRun: sender preparation failed ! Exiting.");
+        exit(EXIT_FAILURE);
+
     }
     
     logInfo("serverPrepareRun: finished !");
@@ -109,21 +126,65 @@ server_exit_code_t serverPrepareRun(void) {
 void serverStopWorkerThreads(void) {
     logInfo("serverStopWorkerThreads: stop multicast listener ...");
     multicastListenerStop();
+    logInfo("serverStopWorkerThreads: stop sender ...");
+    senderStop();
+}
+
+void serverDecodeIncommingPacket(message_t* message) {
+    char host[NI_MAXHOST];
+    char service[NI_MAXSERV];
+    host[0] = '\0';
+    service[0] = '\0';
+
+    multicast_listener_storage_t* multicastListenerStorage = (multicast_listener_storage_t*) message->data;
+    logInfo("serverDecodeIncommingPacket: received an incommingPacket of size [%ld] bytes of data.", multicastListenerStorage->dataLength);
+    
+    resolverResolvePeerAddress(&multicastListenerStorage->peerAddress, multicastListenerStorage->peerAddressLength, host, NI_MAXHOST, service, NI_MAXSERV);
+    logInfo("serverDecodeIncommingPacket: received an incommingPacket from %s:%s", host, service);
 }
 
 void serverDispatchMessage(message_t* message) {
-    logInfo("serverDispatchMessage: received a new message kind [%d] with [%ld] bytes of data.", message->kind, message->dataLength);
-    
+    logInfo("serverDispatchMessage: received a new message kind [%d] of type [%d] with [%ld] bytes of data.", message->kind, message->type, message->dataLength);
+    switch (message->kind) {
+        case incommingPacket: {
+            logInfo("serverDispatchMessage: handle [incommingPacket] message.");
+            serverDecodeIncommingPacket(message);
+            break;
+        }
+        default: {
+            logInfo("serverDispatchMessage: drop unmanaged message.");
+            messageQueueDeleteMessage(message);
+            break;
+        }
+    }
 }
 
 void serverDoJob(void) {
     // logDebug("serverDoJob: ...");
     usleep(currentServer.delay);
     
-    message_t* message = messageQueuePeekMessage(currentServer.messageQueue);
-    if (message != NULL) {
-        serverDispatchMessage(message);
+    message_t* incommingMessage = messageQueuePeekMessage(currentServer.incommingQueue);
+    if (incommingMessage != NULL) {
+        serverDispatchMessage(incommingMessage);
     }
+}
+
+_Bool serverLaunchWorkerThreads(void) {
+    logDebug("serverLaunchWorkerThreads: launch Multicast Listener");
+    if (serverLaunchMulticastListener() == false) {
+        logInfo("serverLaunchWorkerThreads: failed to launch Multicast Listener !");
+        return false;
+    } else {
+        logInfo("serverLaunchWorkerThreads: Multicast Listener launched !");
+    }
+    logDebug("serverLaunchWorkerThreads: launch Sender");
+    if (serverLaunchSender() == false) {
+        logInfo("serverLaunchWorkerThreads: failed to launch Sender !");
+        return false;
+    } else {
+        logInfo("serverLaunchWorkerThreads: Sender launched !");
+    }
+    return true;
 }
 
 server_exit_code_t serverRun(void) {
@@ -141,10 +202,12 @@ server_exit_code_t serverRun(void) {
         return status;
     }
     
-    logDebug("serverRun: launchMulticastListener");
-    serverLaunchMulticastListener();
-    logInfo("serverRun: Multicast Listener launched !");
-    
+    logDebug("serverRun: launch workers threads ...");
+    if (serverLaunchWorkerThreads() == false) {
+        serverFree();
+        return failedToLaunchWorkerThreads;
+    }
+
     while(!currentServer.shouldStop) {
         serverDoJob();
     }

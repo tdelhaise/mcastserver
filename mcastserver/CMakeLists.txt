@@ -8,4 +8,5 @@ add_executable(mcastserver
     ServerConfiguration.c
     NetworkInterface.c
     MulticastListener.c
-    MessageQueue.c)
+    MessageQueue.c
+    Sender.c)

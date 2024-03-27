@@ -32,14 +32,14 @@ static multicast_listener_context_t multicastListenerContext = {
     .messageQueue = NULL
 };
 
-_Bool __multicastListenerPrepareListenSocket(void) {
+_Bool multicastListenerPrepareListenSocket(void) {
     
     //
     // create what looks like an ordinary UDP socket
     //
     multicastListenerContext.listenerSocket = socket(AF_INET, SOCK_DGRAM, 0);
     if (multicastListenerContext.listenerSocket < 0) {
-        logError("__multicastListenerPrepareListenSocket: call to socket function failed ! %m");
+        logError("multicastListenerPrepareListenSocket: call to socket function failed ! %m");
         return false;
     }
     //
@@ -47,15 +47,15 @@ _Bool __multicastListenerPrepareListenSocket(void) {
     //
     u_int yes = 1;
     if (setsockopt(multicastListenerContext.listenerSocket, SOL_SOCKET, SO_REUSEADDR, (char*) &yes, sizeof(yes)) < 0) {
-        logError("__multicastListenerPrepareListenSocket: failed to set socket option for reusing address ! %m");
+        logError("multicastListenerPrepareListenSocket: failed to set socket option for reusing address ! %m");
         return false;
     }
     
-    logInfo("__multicastListenerPrepareListenSocket: Successully prepared socket !");
+    logInfo("multicastListenerPrepareListenSocket: Successully prepared socket !");
     return true;
 }
 
-_Bool __multicastListenerBindSocket(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort) {
+_Bool multicastListenerBindSocket(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort) {
     // set up destination address
     //
     struct sockaddr_in addr;
@@ -67,7 +67,7 @@ _Bool __multicastListenerBindSocket(const char* multicastJoinGroupAddress, uint1
     // bind to receive address
     //
     if (bind(multicastListenerContext.listenerSocket, (struct sockaddr*) &addr, sizeof(addr)) < 0) {
-        logError("__multicastListenerBindSocket: failed to bind ! %m");
+        logError("multicastListenerBindSocket: failed to bind ! %m");
         return false;
     }
     //
@@ -81,7 +81,7 @@ _Bool __multicastListenerBindSocket(const char* multicastJoinGroupAddress, uint1
         return false;
     }
 
-    logInfo("__multicastListenerBindSocket: Successully bind socket !");
+    logInfo("multicastListenerBindSocket: Successully bind socket !");
     return true;
 }
 
@@ -98,8 +98,8 @@ _Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_
     
     multicastListenerContext.messageQueue = serverMessageQueue;
     
-    if(__multicastListenerPrepareListenSocket() &&
-       __multicastListenerBindSocket(multicastJoinGroupAddress, multicastJoinPort) ) {
+    if(multicastListenerPrepareListenSocket() &&
+       multicastListenerBindSocket(multicastJoinGroupAddress, multicastJoinPort) ) {
         
         multicastListenerContext.prepared = true;
         logInfo("multicastListenerPrepareRun: Successfully setup !");
@@ -108,25 +108,6 @@ _Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_
         multicastListenerContext.prepared = false;
         logError("multicastListenerPrepareRun: failed to setup !");
         return false;
-    }
-}
-
-void multicastListenerResolvePeerAddress(struct sockaddr_storage* peerAddress, socklen_t peerAddressLength, char* hostname, int hostnameLength, char* service, int serviceLength) {
-    if(hostnameLength < NI_MAXHOST) {
-        logError("multicastListenerResolvePeerAddress: hostnameLength parameter value less than NI_MAXHOST");
-        return;
-    }
-    if(serviceLength < NI_MAXSERV) {
-        logError("multicastListenerResolvePeerAddress: serviceLength parameter value less than NI_MAXSERV");
-        return;
-    }
-    
-    int status = getnameinfo((struct sockaddr *) peerAddress, peerAddressLength, hostname, hostnameLength, service, serviceLength, NI_NUMERICSERV);
-    if (status == 0) {
-        logInfo("multicastListenerResolvePeerAddress: Peer address resolved to %s:%s\n", hostname, service);
-    } else {
-        logError("multicastListenerResolvePeerAddress: getnameinfo: %s\n", gai_strerror(status));
-        return;
     }
 }
 
@@ -167,6 +148,7 @@ _Bool multicastListenerPrepareMessageToPost(int socket, const char* receivedData
     message->dataLength = multicastListenerStorageSize;
     message->next = NULL;
     message->kind = incommingPacket;
+    message->type = multicastListenerStorageType;
     
     *outputMessage = message;
     
@@ -199,7 +181,7 @@ void* multicastListenerMain(void* unusedArgument) {
         }
         buffer[nbytes] = '\0';
         
-        multicastListenerResolvePeerAddress(&peerAddress, peerAddressLength, host, NI_MAXHOST, service, NI_MAXSERV);
+        resolverResolvePeerAddress(&peerAddress, peerAddressLength, host, NI_MAXHOST, service, NI_MAXSERV);
         logInfo("multicastListenerMain: Received %zd bytes from %s:%s => [%s]\n", nbytes, host, service, buffer);
         
         message_t* outputMessage = NULL;
@@ -226,28 +208,29 @@ void* multicastListenerMain(void* unusedArgument) {
     return NULL;
 }
 
-void multicastListenerRun(void) {
+_Bool multicastListenerRun(void) {
     
     if(multicastListenerContext.prepared == false) {
         logError("multicastListenerRun: multicastListenerPrepareRun() must be called before this function !");
-        return;
+        return false;
     }
     
     int result = pthread_attr_init(&multicastListenerContext.listenerThreadAttributes);
     if ( result != 0 ) {
         const char* errorMessage = strerror(result);
         logError("multicastListenerRun: failed to initialized thread attributes !    [%d] -> %s", result, errorMessage);
-        return;
+        return false;
     }
 
     result = pthread_create(&multicastListenerContext.listenerThread, &multicastListenerContext.listenerThreadAttributes, multicastListenerMain, NULL);
     if ( result != 0 ) {
         const char* errorMessage = strerror(result);
         logError("multicastListenerRun: failed to launch thread ! [%d] -> %s", result, errorMessage);
-        return;
+        return false;
     }
 
     logInfo("multicastListenerRun: Thread launched !");
+    return true;
 }
 
 void multicastListenerWaitForTermination(void) {

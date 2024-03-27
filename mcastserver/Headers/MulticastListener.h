@@ -20,6 +20,7 @@
 #include <netdb.h>
 #include "Logger.h"
 #include "MessageQueue.h"
+#include "Resolver.h"
 
 #define MAX_RECEIVED_DATA 2048L
 
@@ -28,12 +29,13 @@ typedef struct __MulticastListenerStorage {
     ssize_t dataLength;
     char receivedData[MAX_RECEIVED_DATA];
     socklen_t peerAddressLength;
-    struct sockaddr peerAddress;
+    struct sockaddr_storage peerAddress;
 } multicast_listener_storage_t;
 
-void multicastListenerRun(void);
+_Bool multicastListenerRun(void);
 _Bool multicastListenerPrepareRun(const char* multicastJoinGroupAddress, uint16_t multicastJoinPort, message_queue_t* serverMessageQueue);
 void multicastListenerShutdown(void);
 void multicastListenerStop(void);
+void multicastListenerWaitForTermination(void);
 
 #endif /* MulticastListener_h */

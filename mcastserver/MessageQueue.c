@@ -22,6 +22,13 @@ message_queue_t* messageQueueCreate(void) {
         return NULL;
     }
     
+    if( pthread_cond_init(&newMessageQueue->condition, NULL) != 0) {
+        logError("messageQueueCreate: Failed to initialize condition ! %m");
+        pthread_mutex_destroy(&newMessageQueue->mutex);
+        free(newMessageQueue);
+        return NULL;
+    }
+    
     newMessageQueue->head = NULL;
     newMessageQueue->end = NULL;
     newMessageQueue->messageCount = 0;
@@ -37,6 +44,11 @@ _Bool messageQueueCheckMessageConsistancy(message_t* message) {
     }
     
     if (message->kind == undefined) {
+        logError("messageQueueCheckMessageConsistancy: can't insert/delete a message with undefined kind !");
+        return false;
+    }
+    
+    if (message->type == unknownType) {
         logError("messageQueueCheckMessageConsistancy: can't insert/delete a message with undefined type !");
         return false;
     }
@@ -111,6 +123,9 @@ _Bool messageQueueDelete(message_queue_t* queue) {
         queue->head = NULL;
         queue->messageCount = 0;
         pthread_mutex_unlock(&queue->mutex);
+        if(pthread_cond_destroy(&queue->condition) != 0) {
+            logError("messageQueueDelete: unable to destroy condition of the queue ! %m");
+        }
         if(pthread_mutex_destroy(&queue->mutex) != 0) {
             logError("messageQueueDelete: unable to destroy mutex of the queue ! %m");
         }
@@ -122,7 +137,7 @@ _Bool messageQueueDelete(message_queue_t* queue) {
     return true;
 }
 
-message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_kind_t kind, message_structure_t structure) {
+message_t* messageQueueCreateMessageWithData(void* data, uint32_t dataLength, message_kind_t kind, message_type_t type) {
     message_t* newMessage = NULL;
     
     if(data == NULL) {
@@ -140,7 +155,7 @@ message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_ki
         return NULL;
     }
 
-    if(structure == unknown) {
+    if(type == unknownType) {
         logError("messageQueueCreateMessage: structure parameter is unknown !");
         return NULL;
     }
@@ -154,7 +169,7 @@ message_t* messageQueueCreateMessage(void* data, uint32_t dataLength, message_ki
     newMessage->data = data;
     newMessage->dataLength = dataLength;
     newMessage->kind = kind;
-    newMessage->structure = structure;
+    newMessage->type = type;
     newMessage->next = NULL;
     
     return newMessage;
@@ -167,25 +182,61 @@ message_t* messageQueuePeekMessage(message_queue_t* queue) {
         return NULL;
     }
     
-    if(queue->head == NULL) {
-        return NULL;
-    } else {
-        peekMessage = queue->head;
-        if(pthread_mutex_lock(&queue->mutex) == 0) {
-            queue->head = queue->head->next;
-            queue->messageCount = queue->messageCount - 1;
-            peekMessage->next = NULL;
-            if(queue->head == NULL) {
-                queue->end = NULL;
-            }
+    if(pthread_mutex_lock(&queue->mutex) == 0) {
+        while(queue->messageCount == 0) {
+            pthread_cond_wait(&queue->condition,&queue->mutex);
+        }
+        /*
+        if(queue->head == NULL) {
             pthread_mutex_unlock(&queue->mutex);
-        } else {
-            logError("messageQueuePeekMessage: unable to aquire mutex of the queue ! %m");
             return NULL;
         }
+        */
+        peekMessage = queue->head;
+        queue->head = queue->head->next;
+        peekMessage->next = NULL;
+        if(queue->head == NULL) {
+            queue->end = NULL;
+        }
+        queue->messageCount = queue->messageCount - 1;
+        pthread_mutex_unlock(&queue->mutex);
+    } else {
+        logError("messageQueuePeekMessage: unable to aquire mutex of the queue ! %m");
+        return NULL;
     }
 
     return peekMessage;
+}
+
+_Bool messageQueuePostMessage(message_queue_t* queue, message_t* message) {
+    
+    if(messageQueueCheckMessageConsistancy(message) == false) {
+        return false;
+    }
+    
+    if(messageQueueCheckQueueConsistancy(queue) == false) {
+        return false;
+    }
+    
+    // there is actually no message in the queue !
+    if(pthread_mutex_lock(&queue->mutex) == 0) {
+        if (queue->end == NULL) {
+            queue->end = message;
+            queue->head = message;
+            queue->messageCount = 1;
+            pthread_cond_broadcast(&queue->condition);
+        } else {
+            message_t* oldEndMessage = queue->end;
+            oldEndMessage->next = message;
+            queue->end = message;
+            queue->messageCount = queue->messageCount + 1;
+        }
+        pthread_mutex_unlock(&queue->mutex);
+        return true;
+    } else {
+        logError("messageQueuePostMessage: unable to aquire mutex of the queue ! %m");
+        return false;
+    }
 }
 
 _Bool messageQueueDeleteMessage(message_t* messageToDelete) {
@@ -203,44 +254,5 @@ _Bool messageQueueDeleteMessage(message_t* messageToDelete) {
     
     free(messageToDelete);
     messageToDelete = NULL;
-    return true;
-}
-
-_Bool messageQueuePostMessage(message_queue_t* queue, message_t* message) {
-    
-    if(messageQueueCheckMessageConsistancy(message) == false) {
-        return false;
-    }
-    
-    if(messageQueueCheckQueueConsistancy(queue) == false) {
-        return false;
-    }
-    
-    if (queue->end == NULL) {
-        // there is actually no message in the queue !
-        if(pthread_mutex_lock(&queue->mutex) == 0) {
-            queue->end = message;
-            queue->head = message;
-            queue->messageCount = 1;
-            pthread_mutex_unlock(&queue->mutex);
-        } else {
-            logError("messageQueuePostMessage: unable to aquire mutex of the queue ! %m");
-            return false;
-        }
-    } else {
-        // there is message in queue so we will insert the new one
-        // starting at the end of the queue
-        if(pthread_mutex_lock(&queue->mutex) == 0) {
-            message_t* oldEndMessage = queue->end;
-            oldEndMessage->next = message;
-            queue->end = message;
-            queue->messageCount = queue->messageCount + 1;
-            pthread_mutex_unlock(&queue->mutex);
-        } else {
-            logError("messageQueuePostMessage: unable to aquire mutex of the queue ! %m");
-            return false;
-        }
-    }
-
     return true;
 }
